@@ -18,16 +18,10 @@ import { UserMenu } from "./user-menu";
 
 const navigationLinks = [
   { href: "/rules", label: "Rules" },
-  { href: "/board", label: "Trending" },
   { href: "/jobs", label: "Jobs" },
-  { href: "/mcp", label: "MCPs" },
-  { href: "/members", label: "Members" },
-  { href: "/games", label: "Games" },
-  { href: "/learn", label: "Learn" },
   { href: "/advertise", label: "Advertise" },
+  { href: "/our-analytics", label: "Our Analytics" },
   { href: "/about", label: "About" },
-  { href: "/companies", label: "Companies" },
-  { href: "/events", label: "Events" },
 ] as const;
 
 export function Header() {
@@ -60,7 +54,7 @@ export function Header() {
             </Link>
           ))}
 
-          <DropdownMenu>
+          {/* <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
@@ -88,7 +82,7 @@ export function Header() {
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu> */}
 
           <Suspense fallback={null}>
             <UserMenu />

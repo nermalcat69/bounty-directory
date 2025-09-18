@@ -76,10 +76,10 @@ export default function FollowerEmail({
               <Text className="text-xs leading-7 mb-1 font-mono">
                 •{" "}
                 <Link
-                  href="https://bounty.directory/members"
+                  href="https://bounty.directory/board"
                   className="underline text-black font-mono"
                 >
-                  Search for developers and creators
+                  Explore trending projects and ideas
                 </Link>
               </Text>
               <Text className="text-xs leading-7 mb-1 font-mono">

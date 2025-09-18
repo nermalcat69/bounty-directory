@@ -15,6 +15,34 @@
       "when": 1758201499711,
       "tag": "0001_worthless_crystal",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1758202190604,
+      "tag": "0002_petite_vector",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1758203418676,
+      "tag": "0003_chilly_chameleon",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1758205498316,
+      "tag": "0004_mixed_madame_masque",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1758211133473,
+      "tag": "0005_cuddly_human_cannonball",
+      "breakpoints": true
     }
   ]
 }

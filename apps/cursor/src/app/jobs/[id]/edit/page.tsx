@@ -1,6 +1,5 @@
 import { EditJobForm } from "@/components/forms/edit-job";
 import { GithubSignin } from "@/components/github-signin";
-import { GoogleSignin } from "@/components/google-signin";
 import { JobListingSwitch } from "@/components/jobs/jobs-listing-switch";
 import { getJobById } from "@/data/queries";
 import { getSession } from "@/lib/auth-server";
@@ -32,7 +31,6 @@ export default async function Page({ params }: { params: Params }) {
           <div className="mt-10 flex flex-col gap-4">
             <div className="flex flex-col gap-4">
               <GithubSignin redirectTo={`/jobs/${id}/edit`} />
-              <GoogleSignin redirectTo={`/jobs/${id}/edit`} />
             </div>
           </div>
         </div>

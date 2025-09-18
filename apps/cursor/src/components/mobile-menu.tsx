@@ -114,7 +114,7 @@ export function MobileMenu() {
                 {session?.user ? (
                   <>
                     <Link
-                      href={`/u/${session.user.id}`}
+                      href="/profile"
                       onClick={() => setIsOpen(false)}
                     >
                       <Button

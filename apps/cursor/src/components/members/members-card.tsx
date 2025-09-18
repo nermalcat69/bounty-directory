@@ -20,11 +20,16 @@ export function MembersCard({
   gray?: boolean;
   noBorder?: boolean;
 }) {
-  // Extract GitHub username and determine the link
-  const githubUsername = extractGitHubUsername(member);
+  // Check if slug is in the format "username-id" (GitHub username with ID suffix)
+  const githubSlugMatch = member.slug && member.slug.match(/^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)-\d+$/);
+  
+  // Extract GitHub username from slug format or use other fields
+  const githubUsername = githubSlugMatch 
+    ? githubSlugMatch[1] // Extract username part before the ID
+    : extractGitHubUsername(member);
   const profileUrl = githubUsername 
     ? getGitHubProfileUrl(githubUsername)
-    : `/u/${member.slug}`; // Fallback to internal profile if no GitHub found
+    : `/u/${member.slug}`; // Fallback to internal profile
 
   return (
     <Link

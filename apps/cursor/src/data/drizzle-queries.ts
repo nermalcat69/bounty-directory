@@ -326,36 +326,6 @@ export async function getNewUsers() {
   return result[0]?.count || 0;
 }
 
-export async function getMembers(searchTerm?: string) {
-  const baseCondition = eq(users.public, true);
-  
-  const whereCondition = searchTerm 
-    ? and(
-        baseCondition,
-        or(
-          ilike(users.name, `%${searchTerm}%`),
-          ilike(users.bio, `%${searchTerm}%`),
-          ilike(users.work, `%${searchTerm}%`)
-        )
-      )
-    : baseCondition;
-
-  return await db
-    .select({
-      id: users.id,
-      name: users.name,
-      image: users.image,
-      slug: users.slug,
-      bio: users.bio,
-      work: users.work,
-      followerCount: users.followerCount,
-    })
-    .from(users)
-    .where(whereCondition)
-    .orderBy(desc(users.followerCount))
-    .limit(50);
-}
-
 // Avatar queries
 export async function getAvatars() {
   return await db

@@ -2,7 +2,6 @@ import { Startpage } from "@/components/startpage";
 import {
   getFeaturedJobs,
   getFeaturedMCPs,
-  getMembers,
   getPopularPosts,
   getTotalUsers,
 } from "@/data/queries";
@@ -60,11 +59,6 @@ export default async function Page() {
 
   const { data: totalUsers } = await getTotalUsers();
 
-  const { data: members } = await getMembers({
-    page: 1,
-    limit: 12,
-  });
-
   const { data: popularPosts } = await getPopularPosts();
 
   return (
@@ -75,7 +69,7 @@ export default async function Page() {
           jobs={featuredJobs}
           mcps={featuredMCPs}
           totalUsers={totalUsers?.count ?? 0}
-          members={members}
+          members={null}
           popularPosts={popularPosts}
         />
       </div>

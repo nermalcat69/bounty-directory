@@ -14,24 +14,29 @@ import {
 export const planEnum = pgEnum("plan", ["standard", "featured", "premium"]);
 export const workplaceEnum = pgEnum("workplace", ["On site", "Remote", "Hybrid"]);
 
-// Users table
+// Users table - Better Auth compatible
 export const users = pgTable("users", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: varchar("name", { length: 255 }),
-  email: varchar("email", { length: 255 }).unique(),
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+  slug: text("slug"),
   hero: text("hero"),
-  status: varchar("status", { length: 255 }),
+  status: text("status"),
   bio: text("bio"),
-  work: varchar("work", { length: 255 }),
+  work: text("work"),
   website: text("website"),
-  slug: varchar("slug", { length: 255 }).unique(),
   socialXLink: text("social_x_link"),
-  createdAt: timestamp("created_at").defaultNow(),
-  public: boolean("public").default(false),
-  followEmail: boolean("follow_email").default(false),
-  followerCount: integer("follower_count").default(0),
-  followingCount: integer("following_count").default(0),
+  public: boolean("public"),
+  followEmail: boolean("follow_email"),
+  followerCount: integer("follower_count"),
+  followingCount: integer("following_count"),
 });
 
 // Companies table
@@ -43,7 +48,7 @@ export const companies = pgTable("companies", {
   website: text("website"),
   image: text("image"),
   hero: text("hero"),
-  ownerId: uuid("owner_id").references(() => users.id),
+  ownerId: text("owner_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -53,7 +58,7 @@ export const posts = pgTable("posts", {
   title: varchar("title", { length: 500 }).notNull(),
   content: text("content"),
   url: text("url"),
-  userId: uuid("user_id").references(() => users.id).notNull(),
+  userId: text("user_id").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -91,15 +96,15 @@ export const mcps = pgTable("mcps", {
 // Followers table (many-to-many relationship)
 export const followers = pgTable("followers", {
   id: uuid("id").primaryKey().defaultRandom(),
-  followerId: uuid("follower_id").references(() => users.id).notNull(),
-  followingId: uuid("following_id").references(() => users.id).notNull(),
+  followerId: text("follower_id").references(() => users.id).notNull(),
+  followingId: text("following_id").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Votes table
 export const votes = pgTable("votes", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id").references(() => users.id).notNull(),
+  userId: text("user_id").references(() => users.id).notNull(),
   postId: uuid("post_id").references(() => posts.id).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -136,7 +141,7 @@ export const session = pgTable("session", {
     .notNull(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
-  userId: uuid("user_id")
+  userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
 });
@@ -145,7 +150,7 @@ export const account = pgTable("account", {
   id: text("id").primaryKey(),
   accountId: text("account_id").notNull(),
   providerId: text("provider_id").notNull(),
-  userId: uuid("user_id")
+  userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   accessToken: text("access_token"),

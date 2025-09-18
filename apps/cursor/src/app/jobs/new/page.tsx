@@ -1,6 +1,5 @@
 import { JobForm } from "@/components/forms/job";
 import { GithubSignin } from "@/components/github-signin";
-import { GoogleSignin } from "@/components/google-signin";
 import { getSession } from "@/lib/auth-server";
 import type { Metadata } from "next";
 
@@ -25,7 +24,6 @@ export default async function Page() {
           <div className="mt-10 flex flex-col gap-4">
             <div className="flex flex-col gap-4">
               <GithubSignin redirectTo="/jobs/new" />
-              <GoogleSignin redirectTo="/jobs/new" />
             </div>
           </div>
         </div>

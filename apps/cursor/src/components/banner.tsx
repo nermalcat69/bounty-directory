@@ -30,7 +30,7 @@ export function Banner() {
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          stroke-width="2"
+          strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
           className="absolute left-4 top-5" // Added positioning like other logos

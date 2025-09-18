@@ -2,6 +2,7 @@ import { Banner } from "@/components/banner";
 import "./globals.css";
 import { Header } from "@/components/header";
 import { GlobalModals } from "@/components/modals/global-modals";
+import { UserSync } from "@/components/user-sync";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
@@ -92,6 +93,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <NuqsAdapter>
+            <UserSync />
             <Header />
             {children}
 
