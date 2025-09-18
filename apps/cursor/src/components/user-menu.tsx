@@ -1,6 +1,6 @@
 "use client";
 
-import { createClient } from "@/utils/supabase/client";
+import { signOut, useSession } from "@/lib/auth-client";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -9,6 +9,7 @@ import { parseAsBoolean } from "nuqs";
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
+import { GithubSignin } from "./github-signin";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,56 +18,25 @@ import {
 } from "./ui/dropdown-menu";
 import { Skeleton } from "./ui/skeleton";
 
-type User = {
-  id: string;
-  slug: string;
-  name?: string;
-  email?: string;
-  image?: string;
-};
-
 export function UserMenu() {
   const pathname = usePathname();
-  const supabase = createClient();
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: session, isPending } = useSession();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const [_, setQueryStates] = useQueryStates({
     addCompany: parseAsBoolean.withDefault(false),
     redirect: parseAsBoolean.withDefault(false),
   });
 
-  useEffect(() => {
-    async function getUser() {
-      setIsLoading(true);
-      const session = await supabase.auth.getSession();
-
-      if (!session.data.session) {
-        setIsLoading(false);
-        return;
-      }
-
-      const { data } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", session.data.session?.user?.id)
-        .single();
-
-      setUser(data);
-      setIsLoading(false);
-    }
-
-    if (!user) {
-      getUser();
-    }
-  }, [pathname]);
-
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
+    await signOut();
   };
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="flex items-center gap-2">
         <Skeleton className="size-6 rounded-none" />
@@ -74,11 +44,13 @@ export function UserMenu() {
     );
   }
 
+  const user = session?.user;
+
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      initial={isClient ? { opacity: 0 } : undefined}
+      animate={isClient ? { opacity: 1 } : undefined}
+      transition={isClient ? { duration: 0.3 } : undefined}
       className="flex items-center gap-4"
     >
       {user ? (
@@ -86,7 +58,7 @@ export function UserMenu() {
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Avatar className="size-6 rounded-none cursor-pointer">
-                <AvatarImage src={user?.image} className="rounded-none" />
+                <AvatarImage src={user?.image || ""} className="rounded-none" />
                 <AvatarFallback className="text-xs bg-[#878787]">
                   {user?.name?.charAt(0)}
                 </AvatarFallback>
@@ -99,7 +71,7 @@ export function UserMenu() {
               sideOffset={8}
             >
               <DropdownMenuItem asChild>
-                <Link href={`/u/${user?.slug}`}>Profile</Link>
+                <Link href={`/u/${user?.id}`}>Profile</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <button
@@ -122,14 +94,7 @@ export function UserMenu() {
           </DropdownMenu>
         </div>
       ) : (
-        <Link href={`/login?next=${pathname}`}>
-          <Button
-            variant="outline"
-            className="bg-white text-black h-8 rounded-full"
-          >
-            Sign In
-          </Button>
-        </Link>
+        <GithubSignin />
       )}
     </motion.div>
   );

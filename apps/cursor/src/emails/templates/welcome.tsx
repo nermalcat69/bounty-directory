@@ -60,18 +60,18 @@ export default function WelcomeEmail({
             <Text className="text-xs font-mono">
               <span className="text-lg">◇ </span>
               <Link
-                href="https://cursor.directory/rules"
+                href="https://bounty.directory/rules"
                 className="underline text-black font-mono"
               >
                 Explore Cursor Rules
               </Link>{" "}
-              – Browse existing rules or generate your own based on your needs
+              – Browse existing rules based on your needs
             </Text>
 
             <Text className="text-xs font-mono">
               <span className="text-lg">◇ </span>
               <Link
-                href="https://cursor.directory/board"
+                href="https://bounty.directory/board"
                 className="underline text-black font-mono"
               >
                 Stay updated with the Board
@@ -83,7 +83,7 @@ export default function WelcomeEmail({
             <Text className="text-xs font-mono">
               <span className="text-lg">◇ </span>
               <Link
-                href="https://cursor.directory/mcp"
+                href="https://bounty.directory/mcp"
                 className="underline text-black font-mono"
               >
                 Dive into MCPs
@@ -94,7 +94,7 @@ export default function WelcomeEmail({
             <Text className="text-xs font-mono">
               <span className="text-lg">◇ </span>
               <Link
-                href="https://cursor.directory/learn"
+                href="https://bounty.directory/learn"
                 className="underline text-black font-mono"
               >
                 Learn & Level Up
@@ -113,10 +113,10 @@ export default function WelcomeEmail({
               <Text className="text-xs leading-7 mb-6 font-mono">
                 Jump in and start exploring:{" "}
                 <Link
-                  href="https://cursor.directory"
+                  href="https://bounty.directory"
                   className="underline text-black font-mono"
                 >
-                  cursor.directory
+                  bounty.directory
                 </Link>
               </Text>
             </Section>

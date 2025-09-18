@@ -9,7 +9,21 @@ export async function JobsList() {
     <div className="flex gap-8 justify-between mt-6">
       <div className="flex flex-col gap-8 mt-10 max-w-screen-sm xl:max-w-screen-md border-t border-border pt-10">
         {jobs?.map((job) => (
-          <JobsCard key={job.id} data={job} />
+          <JobsCard 
+            key={job.id} 
+            data={{
+              ...job,
+              created_at: job.createdAt?.toISOString() || "",
+              owner_id: job.owner_id || "",
+              company: {
+                name: job.company.name,
+                image: job.company.image || "",
+                slug: job.company.slug,
+              },
+              location: job.location || "",
+              experience: job.experience || "",
+            }} 
+          />
         ))}
       </div>
 

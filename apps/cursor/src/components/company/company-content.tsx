@@ -29,7 +29,7 @@ export function CompanyContent({
               <LinkIcon className="size-3.5 mt-2" />
               <p className="text-sm font-mono text-[#878787] mt-2">
                 <a
-                  href={`${website}?utm_source=cursor.directory`}
+                  href={`${website}?utm_source=bounty.directory`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >

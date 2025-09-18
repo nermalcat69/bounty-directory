@@ -16,15 +16,19 @@ export async function CompanyJobs({ slug }: { slug: string }) {
           key={job.id}
           data={{
             id: job.id,
-            owner_id: job.owner_id,
+            owner_id: job.owner_id || "",
             title: job.title,
-            company: job.companies,
-            location: job.location,
+            company: {
+              name: job.companies.name,
+              slug: job.companies.slug,
+              image: job.companies.image || "",
+            },
+            location: job.location || "",
             description: job.description,
-            created_at: job.created_at,
+            created_at: job.createdAt?.toISOString() || "",
             link: job.link,
             workplace: job.workplace,
-            experience: job.experience,
+            experience: job.experience || "",
           }}
         />
       ))}

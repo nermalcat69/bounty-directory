@@ -60,7 +60,7 @@ export function BoardPost({
             <span>
               {url ? (
                 <a
-                  href={`${url}?utm_source=cursor.directory&utm_medium=board`}
+                  href={`${url}?utm_source=bounty.directory&utm_medium=board`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >

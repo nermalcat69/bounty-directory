@@ -1,8 +1,9 @@
-import { getSession } from "@/utils/supabase/auth";
+import { auth } from "@/lib/auth";
 import {
   DEFAULT_SERVER_ERROR_MESSAGE,
   createSafeActionClient,
 } from "next-safe-action";
+import { headers } from "next/headers";
 import { z } from "zod";
 
 class ActionError extends Error {}
@@ -35,7 +36,9 @@ export const actionClient = createSafeActionClient({
 });
 
 export const authActionClient = actionClient.use(async ({ next }) => {
-  const session = await getSession();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
   if (!session) {
     throw new Error("Session not found!");
@@ -45,7 +48,7 @@ export const authActionClient = actionClient.use(async ({ next }) => {
     ctx: {
       userId: session.user.id,
       email: session.user.email,
-      name: session.user.user_metadata.name,
+      name: session.user.name,
     },
   });
 });

@@ -99,7 +99,7 @@ export function JobsFeatured({
                   asChild
                 >
                   <a
-                    href={`${job.link}?utm_source=cursor.directory&utm_medium=referral&utm_campaign=jobs-featured`}
+                    href={`${job.link}?utm_source=bounty.directory&utm_medium=referral&utm_campaign=jobs-featured`}
                     target="_blank"
                     rel="noopener noreferrer"
                   >

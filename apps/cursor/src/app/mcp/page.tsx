@@ -16,6 +16,33 @@ export default async function Page() {
   const { data: featuredMCPs } = await getFeaturedMCPs();
   const { data: mcps } = await getMCPs();
 
+  // Transform the data to match the MCP type expected by MCPsFeatured and MCPsList
+  const transformedFeaturedMCPs = featuredMCPs?.map(mcp => ({
+    id: mcp.id,
+    name: mcp.name,
+    logo: "", // No logo available in current schema
+    description: mcp.description || "",
+    slug: mcp.slug,
+    user: {
+      name: "MCP Server",
+      slug: "mcp",
+      image: "",
+    },
+  })) || null;
+
+  const transformedMCPs = mcps?.map(mcp => ({
+    id: mcp.id,
+    name: mcp.name,
+    logo: "", // No logo available in current schema
+    description: mcp.description || "",
+    slug: mcp.slug,
+    user: {
+      name: "MCP Server",
+      slug: "mcp",
+      image: "",
+    },
+  })) || null;
+
   return (
     <div className="max-w-screen-xl mx-auto px-6 py-12 md:mt-24 pb-32">
       <h1 className="text-xl mb-2">Featured MCPs</h1>
@@ -27,9 +54,9 @@ export default async function Page() {
         .
       </p>
 
-      <MCPsFeatured data={featuredMCPs} />
+      <MCPsFeatured data={transformedFeaturedMCPs} />
       <Suspense fallback={null}>
-        <MCPsList data={mcps} />
+        <MCPsList data={transformedMCPs} />
       </Suspense>
     </div>
   );

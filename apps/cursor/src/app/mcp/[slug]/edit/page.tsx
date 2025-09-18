@@ -3,7 +3,7 @@ import { GithubSignin } from "@/components/github-signin";
 import { GoogleSignin } from "@/components/google-signin";
 import { MCPListingSwitch } from "@/components/mcps/mcps-listing-switch";
 import { getMCPBySlug } from "@/data/queries";
-import { getSession } from "@/utils/supabase/auth";
+import { getSession } from "@/lib/auth-server";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -48,10 +48,20 @@ export default async function Page({ params }: { params: Params }) {
     <div className="mx-auto max-w-screen-sm xl:max-w-screen-sm border-t border-border pt-32 pb-16">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl mb-4">Edit MCP </h1>
-        <MCPListingSwitch id={mcp.id} active={mcp.active} />
+        <MCPListingSwitch id={mcp.id} active={mcp.active ?? false} />
       </div>
 
-      <EditMCPForm data={mcp} />
+      <EditMCPForm 
+        data={{
+          id: mcp.id,
+          name: mcp.name || undefined,
+          description: mcp.description || undefined,
+          link: mcp.repository || undefined,
+          logo: "",
+          company_id: mcp.companyId || "",
+          active: mcp.active ?? false,
+        }} 
+      />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { MCPForm } from "@/components/forms/mcp";
 import { GithubSignin } from "@/components/github-signin";
 import { GoogleSignin } from "@/components/google-signin";
-import { getSession } from "@/utils/supabase/auth";
+import { getSession } from "@/lib/auth-server";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

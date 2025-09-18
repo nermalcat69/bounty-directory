@@ -1,6 +1,8 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
+import { db } from "@/db";
+import { companies } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { authActionClient } from "./safe-action";
@@ -38,34 +40,40 @@ export const upsertCompanyAction = authActionClient
         redirect: shouldRedirect,
       },
     }) => {
-      const supabase = await createClient();
+      let result;
 
-      await supabase.from("companies").upsert(
-        {
-          id: id ?? undefined,
+      if (id) {
+        // Update existing company
+        const updateData: any = {
           name,
-          image,
-          location,
-          slug: slug ?? undefined,
-          bio,
+          description: bio,
           website,
-          social_x_link,
-          public: is_public,
-        },
-        {
-          onConflict: "slug",
-        },
-      );
+        };
+        if (image) updateData.image = image;
+        if (slug) updateData.slug = slug;
 
-      const { data, error } = await supabase
-        .from("companies")
-        .select("id, slug")
-        .eq("id", id)
-        .single();
+        result = await db
+          .update(companies)
+          .set(updateData)
+          .where(eq(companies.id, id))
+          .returning({ id: companies.id, slug: companies.slug });
+      } else {
+        // Insert new company
+        const insertData: any = {
+          name,
+          description: bio,
+          website,
+        };
+        if (image) insertData.image = image;
+        if (slug) insertData.slug = slug;
 
-      if (error) {
-        throw new Error(error.message);
+        result = await db
+          .insert(companies)
+          .values(insertData)
+          .returning({ id: companies.id, slug: companies.slug });
       }
+
+      const data = result[0];
 
       if (shouldRedirect) {
         redirect(`/c/${data?.slug}`);

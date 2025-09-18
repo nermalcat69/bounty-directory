@@ -1,6 +1,8 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
+import { db } from "@/db";
+import { mcps, companies } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { authActionClient } from "./safe-action";
@@ -25,30 +27,47 @@ export const updateMCPListingAction = authActionClient
       parsedInput: { id, name, company_id, description, link, logo, config },
       ctx: { userId },
     }) => {
-      const supabase = await createClient();
-
-      const { data, error } = await supabase
-        .from("mcps")
-        .update({
-          name,
-          description,
-          company_id,
-          config,
-          link,
-          logo,
+      // First verify ownership through company
+      const mcpData = await db
+        .select({
+          id: mcps.id,
+          companyId: mcps.companyId,
         })
-        .eq("id", id)
-        .eq("owner_id", userId)
-        .select("id")
-        .single();
+        .from(mcps)
+        .leftJoin(companies, eq(mcps.companyId, companies.id))
+        .where(
+          and(
+            eq(mcps.id, id),
+            eq(companies.ownerId, userId)
+          )
+        )
+        .limit(1);
 
-      if (error) {
-        throw new Error(error.message);
+      if (!mcpData.length) {
+        throw new Error("MCP not found or you don't have permission to modify it");
       }
+
+      // Generate slug from name if name changed
+      const slug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+
+      const [updatedMcp] = await db
+        .update(mcps)
+        .set({
+          name,
+          slug,
+          description,
+          companyId: company_id || null,
+          repository: link,
+        })
+        .where(eq(mcps.id, id))
+        .returning({ id: mcps.id });
 
       revalidatePath("/mcps");
       revalidatePath("/");
 
-      return data;
+      return updatedMcp;
     },
   );

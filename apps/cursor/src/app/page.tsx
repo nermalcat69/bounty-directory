@@ -21,13 +21,42 @@ export const revalidate = 86400; // Revalidate once every day
 
 export default async function Page() {
   const popularRules = await getPopularRules();
-  const { data: featuredJobs } = await getFeaturedJobs({
+  
+  const { data: featuredJobsData } = await getFeaturedJobs({
     onlyPremium: true,
   });
 
-  const { data: featuredMCPs } = await getFeaturedMCPs({
+  const { data: featuredMCPsData } = await getFeaturedMCPs({
     onlyPremium: true,
   });
+
+  // Transform the jobs data to match the Job type expected by Startpage
+  const featuredJobs = featuredJobsData?.map(job => ({
+    id: job.id,
+    title: job.title,
+    description: job.description,
+    company: {
+      name: job.company.name,
+      slug: job.company.slug,
+      image: job.company.image || "",
+    },
+    workplace: job.workplace,
+    link: job.link,
+  })) || null;
+
+  // Transform the MCPs data to match the MCP type expected by Startpage
+  const featuredMCPs = featuredMCPsData?.map(mcp => ({
+    id: mcp.id,
+    name: mcp.name,
+    logo: "", // No logo available in current schema
+    description: mcp.description || "",
+    slug: mcp.slug,
+    user: {
+      name: "MCP Server",
+      slug: "mcp",
+      image: "",
+    },
+  })) || null;
 
   const { data: totalUsers } = await getTotalUsers();
 

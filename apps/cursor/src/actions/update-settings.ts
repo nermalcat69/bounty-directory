@@ -1,6 +1,8 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
+import { db } from "@/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { authActionClient } from "./safe-action";
@@ -15,22 +17,15 @@ export const updateSettingsAction = authActionClient
     }),
   )
   .action(async ({ parsedInput: { follow_email }, ctx: { userId } }) => {
-    const supabase = await createClient();
-
-    const { data, error } = await supabase
-      .from("users")
-      .update({
-        follow_email,
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        followEmail: follow_email,
       })
-      .eq("id", userId)
-      .select("id, slug")
-      .single();
+      .where(eq(users.id, userId))
+      .returning({ id: users.id, slug: users.slug });
 
-    if (error) {
-      throw new Error(error.message);
-    }
+    revalidatePath(`/u/${updatedUser.slug}/settings`);
 
-    revalidatePath(`/u/${data.slug}/settings`);
-
-    return data;
+    return updatedUser;
   });

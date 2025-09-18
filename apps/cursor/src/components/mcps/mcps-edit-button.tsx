@@ -1,26 +1,15 @@
 "use client";
 
-import { createClient } from "@/utils/supabase/client";
+import { useSession } from "@/lib/auth-client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 
 export function MCPsEditButton({
   ownerId,
   slug,
 }: { ownerId: string; slug: string }) {
-  const supabase = createClient();
-  const [userId, setUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function getUser() {
-      const session = await supabase.auth.getSession();
-
-      setUserId(session.data.session?.user?.id ?? null);
-    }
-
-    getUser();
-  }, []);
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
 
   if (!userId) {
     return null;

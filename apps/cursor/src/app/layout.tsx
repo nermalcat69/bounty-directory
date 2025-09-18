@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Cursor Directory",
     description: "Find the best cursor rules for your framework and language",
-    url: "https://cursor.directory",
+    url: "https://bounty.directory",
     locale: "en_US",
     type: "website",
     images: [
@@ -96,7 +96,7 @@ export default function RootLayout({
             {children}
 
             <a
-              href="https://github.com/pontusab/cursor.directory"
+              href="https://github.com/pontusab/bounty.directory"
               target="_blank"
               rel="noreferrer"
             >

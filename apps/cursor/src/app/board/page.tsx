@@ -14,7 +14,7 @@ export default async function Page() {
 
   return (
     <div className="flex mx-auto max-w-4xl min-h-screen w-full md:mt-28 mt-14 px-6 lg:px-0">
-      <BoardList popularPosts={popularPosts} />
+      <BoardList popularPosts={popularPosts || []} />
     </div>
   );
 }

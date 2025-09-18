@@ -1,7 +1,8 @@
 "use server";
 
 import { createJobListingCheckoutSession } from "@/lib/polar";
-import { createClient } from "@/utils/supabase/server";
+import { db } from "@/db";
+import { jobs } from "@/db/schema";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { authActionClient } from "./safe-action";
@@ -36,30 +37,25 @@ export const createJobListingAction = authActionClient
       },
       ctx: { email, name },
     }) => {
-      const supabase = await createClient();
-
-      const { data, error } = await supabase
-        .from("jobs")
-        .insert({
+      const result = await db
+        .insert(jobs)
+        .values({
           title,
-          company_id,
-          location,
+          companyId: company_id,
+          location: location || null,
           description,
           link,
           workplace,
-          experience,
+          experience: experience || null,
           plan,
         })
-        .select("id")
-        .single();
+        .returning({ id: jobs.id });
 
-      if (error) {
-        throw new Error(error.message);
-      }
+      const jobId = result[0].id;
 
       const session = await createJobListingCheckoutSession({
         plan,
-        jobListingId: data.id,
+        jobListingId: jobId,
         companyId: company_id,
         email: email ?? "",
         customerName: name ?? "",

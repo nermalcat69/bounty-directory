@@ -1,6 +1,8 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
+import { db } from "@/db";
+import { mcps, companies } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { authActionClient } from "./safe-action";
@@ -16,25 +18,27 @@ export const toggleMCPListingAction = authActionClient
     }),
   )
   .action(async ({ parsedInput: { id, active }, ctx: { userId } }) => {
-    const supabase = await createClient();
+    // First verify ownership through company
+    const [updatedMcp] = await db
+      .update(mcps)
+      .set({ active })
+      .from(mcps)
+      .innerJoin(companies, eq(mcps.companyId, companies.id))
+      .where(
+        and(
+          eq(mcps.id, id),
+          eq(companies.ownerId, userId)
+        )
+      )
+      .returning({ slug: mcps.slug });
 
-    const { data, error } = await supabase
-      .from("mcps")
-      .update({
-        active,
-      })
-      .eq("id", id)
-      .eq("owner_id", userId)
-      .select("slug")
-      .single();
-
-    if (error) {
-      throw new Error(error.message);
+    if (!updatedMcp) {
+      throw new Error("MCP not found or you don't have permission to modify it");
     }
 
-    revalidatePath(`/mcp/${data.slug}`);
+    revalidatePath(`/mcp/${updatedMcp.slug}`);
     revalidatePath("/mcp");
     revalidatePath("/");
 
-    return data;
+    return updatedMcp;
   });

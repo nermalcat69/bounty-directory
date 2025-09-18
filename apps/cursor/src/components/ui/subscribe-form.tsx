@@ -38,7 +38,7 @@ export function SubscribeForm({ group, placeholder, className }: Props) {
   const [isSubmitted, setSubmitted] = useState(false);
   const pathname = usePathname();
 
-  if (pathname === "/generate" || pathname === "/mcp") {
+  if (pathname === "/mcp") {
     return null;
   }
 

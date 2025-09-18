@@ -49,7 +49,7 @@ export default function FollowerEmail({
             <Text className="text-xs leading-7 pb-2 font-mono">
               Great news!{" "}
               <Link
-                href={`https://cursor.directory/u/${followerSlug}`}
+                href={`https://bounty.directory/u/${followerSlug}`}
                 className="underline text-black font-mono"
               >
                 {followerName}
@@ -57,7 +57,7 @@ export default function FollowerEmail({
               is now following you on Cursor Directory. This means they'll get
               notified when you share new rules and{" "}
               <Link
-                href="https://cursor.directory/board"
+                href="https://bounty.directory/board"
                 className="underline text-black font-mono"
               >
                 posts
@@ -76,7 +76,7 @@ export default function FollowerEmail({
               <Text className="text-xs leading-7 mb-1 font-mono">
                 •{" "}
                 <Link
-                  href="https://cursor.directory/members"
+                  href="https://bounty.directory/members"
                   className="underline text-black font-mono"
                 >
                   Search for developers and creators
@@ -85,7 +85,7 @@ export default function FollowerEmail({
               <Text className="text-xs leading-7 mb-1 font-mono">
                 •{" "}
                 <Link
-                  href="https://cursor.directory/board"
+                  href="https://bounty.directory/board"
                   className="underline text-black font-mono"
                 >
                   Discover trending posts
@@ -95,10 +95,10 @@ export default function FollowerEmail({
               <Text className="text-xs leading-7 mb-6 font-mono">
                 Start exploring:{" "}
                 <Link
-                  href="https://cursor.directory"
+                  href="https://bounty.directory"
                   className="underline text-black font-mono"
                 >
-                  cursor.directory
+                  bounty.directory
                 </Link>
               </Text>
             </Section>
@@ -123,7 +123,7 @@ export default function FollowerEmail({
               </Link>
             </Text>
             <Link
-              href={`https://cursor.directory/u/${followingSlug}/settings`}
+              href={`https://bounty.directory/u/${followingSlug}/settings`}
               className="text-xs leading-7 font-mono underline text-black"
             >
               Manage your notification settings

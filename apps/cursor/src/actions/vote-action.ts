@@ -16,7 +16,7 @@ export const voteAction = actionClient
       headers.get("x-forwarded-for"),
     );
 
-    const hasVoted = await redis.sadd(`rules:${slug}:ip:${clientIP}`, true);
+    const hasVoted = await redis.sadd(`rules:${slug}:ip:${clientIP}`, "voted");
 
     if (!hasVoted) {
       throw new Error("You have already voted");

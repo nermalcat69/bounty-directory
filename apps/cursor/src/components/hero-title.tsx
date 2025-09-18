@@ -27,11 +27,7 @@ export function HeroTitle({ totalUsers }: { totalUsers: number }) {
           animation: "fadeIn 0.2s ease forwards 0.1s",
         }}
       >
-        The home for Cursor enthusiasts where you can explore and{" "}
-        <Link href="/generate" className="border-b border-border border-dashed">
-          generate
-        </Link>{" "}
-        rules, browse{" "}
+        The home for Cursor enthusiasts where you can explore rules, browse{" "}
         <Link href="/mcp" className="border-b border-border border-dashed">
           MCPs
         </Link>

@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createClient } from "@/utils/supabase/client";
+import { useSession } from "@/lib/auth-client";
 import { parseAsBoolean, useQueryStates } from "nuqs";
 import { useEffect, useState } from "react";
 import { AddCompanyButton } from "./add-company-button";
@@ -27,7 +27,7 @@ export function CompanySelect({
 }) {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
-  const supabase = createClient();
+  const { data: session } = useSession();
   const [{ reload }, setQueryStates] = useQueryStates({
     reload: parseAsBoolean.withDefault(false),
     addCompany: parseAsBoolean.withDefault(false),
@@ -35,25 +35,14 @@ export function CompanySelect({
 
   useEffect(() => {
     async function fetchCompanies() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (session) {
-        const { data } = await supabase
-          .from("companies")
-          .select("id, name")
-          .eq("owner_id", session.user.id)
-          .order("created_at", { ascending: false });
-
-        if (data) {
-          setCompanies(data);
-
-          const initialCompany = data.find((c) => c.id === value) || data[0];
-          setSelectedCompany(initialCompany);
-          onChange(initialCompany?.id ?? "");
-        }
+      if (!session?.user?.id) {
+        setCompanies([]);
+        return;
       }
+
+      // TODO: Replace with proper database query using Drizzle
+      // For now, we'll use empty array
+      setCompanies([]);
     }
 
     fetchCompanies();
@@ -61,7 +50,7 @@ export function CompanySelect({
     if (reload) {
       setQueryStates({ reload: false, addCompany: false });
     }
-  }, [reload]);
+  }, [reload, session?.user?.id]);
 
   return (
     <div className="flex items-center gap-4">

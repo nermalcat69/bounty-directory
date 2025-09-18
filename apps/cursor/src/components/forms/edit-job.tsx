@@ -52,7 +52,7 @@ const formSchema = z.object({
 });
 
 export type JobData = {
-  id: number;
+  id: string;
   title?: string;
   location?: string;
   description?: string;

@@ -4,21 +4,18 @@ import { votePostAction } from "@/actions/vote-post-action";
 import { SignInModal } from "@/components/modals/sign-in-modal";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { isAuthenticated as isAuthenticatedClient } from "@/utils/supabase/client-session";
+import { useSession } from "@/lib/auth-client";
 import { useOptimisticAction } from "next-safe-action/hooks";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export function BoardVotes({
   votes,
   postId,
   hasVoted,
 }: { votes: number; postId: number; hasVoted: boolean }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { data: session } = useSession();
+  const isAuthenticated = !!session?.user;
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
-
-  useEffect(() => {
-    setIsAuthenticated(isAuthenticatedClient());
-  }, []);
 
   const { execute, optimisticState } = useOptimisticAction(votePostAction, {
     currentState: {
@@ -41,7 +38,7 @@ export function BoardVotes({
     }
 
     execute({
-      postId,
+      postId: postId.toString(),
       action: hasVoted ? "downvote" : "upvote",
     });
   };

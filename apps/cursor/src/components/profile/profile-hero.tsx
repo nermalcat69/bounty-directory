@@ -1,6 +1,5 @@
 "use client";
 
-import { createClient } from "@/utils/supabase/client";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { type ChangeEvent, useRef } from "react";
@@ -31,33 +30,8 @@ export function ProfileHero({
     }
 
     try {
-      // Upload to Supabase Storage
-      const supabase = createClient();
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-
-      await supabase.storage
-        .from("avatars")
-        .upload(`${userId}/hero/${fileName}`, file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-
-      // Get public URL
-      const {
-        data: { publicUrl },
-      } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(`${userId}/hero/${fileName}`);
-
-      await supabase
-        .from("users")
-        .update({
-          hero: publicUrl,
-        })
-        .eq("id", userId);
-
-      router.refresh();
+      // TODO: Implement file storage solution
+      console.log("File upload functionality - implementation needed");
     } catch (error) {
       console.error("Error uploading file:", error);
     }

@@ -52,26 +52,26 @@ export default async function Page({
     <div className="min-h-screen mt-24 px-4">
       <div className="container px-4 py-8 max-w-2xl">
         <div className="flex items-center gap-4 mb-6">
-          {mcp.logo && (
+          {mcp.company?.image && (
             <Image
-              src={mcp.logo}
-              alt={`${mcp.name} logo`}
+              src={mcp.company.image}
+              alt={`${mcp.company.name} logo`}
               width={48}
               height={48}
             />
           )}
           <div className="flex items-center gap-2 justify-between w-full">
             <h1 className="text-2xl">{mcp.name}</h1>
-            <MCPsEditButton ownerId={mcp.owner_id} slug={mcp.slug} />
+            <MCPsEditButton ownerId={mcp.owner_id || ""} slug={mcp.slug} />
           </div>
         </div>
         <p className="text-[#878787] mb-4">{mcp.description}</p>
 
-        {mcp?.mcp_link ? (
-          <CursorDeepLink mcp_link={mcp.mcp_link} />
+        {mcp?.npmPackage ? (
+          <CursorDeepLink mcp_link={mcp.npmPackage} />
         ) : (
           <Link
-            href={mcp.link}
+            href={mcp.repository || "#"}
             className="text-sm text-[#878787] flex items-center gap-1"
             target="_blank"
           >

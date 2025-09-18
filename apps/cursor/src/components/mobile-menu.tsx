@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { createClient } from "@/utils/supabase/client";
+import { useSession, signOut } from "@/lib/auth-client";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
@@ -22,45 +22,10 @@ const navigationLinks = [
   { href: "/events", label: "Events" },
 ] as const;
 
-type User = {
-  id: string;
-  slug: string;
-  name?: string;
-  email?: string;
-  image?: string;
-};
-
 export function MobileMenu() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const supabase = createClient();
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    async function getUser() {
-      setIsLoading(true);
-      const session = await supabase.auth.getSession();
-
-      if (!session.data.session) {
-        setIsLoading(false);
-        return;
-      }
-
-      const { data } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", session.data.session?.user?.id)
-        .single();
-
-      setUser(data);
-      setIsLoading(false);
-    }
-
-    if (!user) {
-      getUser();
-    }
-  }, [pathname]);
+  const { data: session, isPending: isLoading } = useSession();
 
   useEffect(() => {
     if (isOpen) {
@@ -74,22 +39,21 @@ export function MobileMenu() {
   }, [isOpen]);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
+    await signOut();
     setIsOpen(false);
   };
 
   return (
     <>
       <div className="md:hidden mr-4">
-        {user ? (
+        {session?.user ? (
           <Avatar
             className="size-6 rounded-none cursor-pointer"
             onClick={() => setIsOpen(!isOpen)}
           >
-            <AvatarImage src={user?.image} className="rounded-none" />
+            <AvatarImage src={session.user.image || undefined} className="rounded-none" />
             <AvatarFallback className="text-xs bg-[#878787]">
-              {user?.name?.charAt(0)}
+              {session.user.name?.charAt(0)}
             </AvatarFallback>
           </Avatar>
         ) : (
@@ -147,10 +111,10 @@ export function MobileMenu() {
                   duration: 0.1,
                 }}
               >
-                {user ? (
+                {session?.user ? (
                   <>
                     <Link
-                      href={`/u/${user?.slug}`}
+                      href={`/u/${session.user.id}`}
                       onClick={() => setIsOpen(false)}
                     >
                       <Button

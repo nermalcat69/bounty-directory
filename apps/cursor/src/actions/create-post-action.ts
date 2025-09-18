@@ -1,7 +1,9 @@
 "use server";
 
 import { createPostRatelimit } from "@/lib/ratelimit";
-import { createClient } from "@/utils/supabase/server";
+import { db } from "@/db";
+import { posts } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { authActionClient } from "./safe-action";
@@ -26,30 +28,30 @@ export const createPostAction = authActionClient
       throw new Error("Too many requests. Please try again later.");
     }
 
-    const supabase = await createClient();
+    // Check if URL already exists
+    if (url) {
+      const existingPost = await db
+        .select()
+        .from(posts)
+        .where(eq(posts.url, url))
+        .limit(1);
 
-    const { data: post } = await supabase
-      .from("posts")
-      .select()
-      .eq("url", url)
-      .limit(1);
-
-    if (post && post.length > 0) {
-      throw new Error("This URL has already been submitted.");
+      if (existingPost.length > 0) {
+        throw new Error("This URL has already been submitted.");
+      }
     }
 
-    const { data, error } = await supabase.from("posts").insert({
-      title,
-      content,
-      url,
-      user_id: userId,
-    });
-
-    if (error) {
-      throw new Error(error.message);
-    }
+    const result = await db
+      .insert(posts)
+      .values({
+        title,
+        content: content || null,
+        url: url || null,
+        userId,
+      })
+      .returning();
 
     revalidatePath("/board");
 
-    return data;
+    return result[0];
   });

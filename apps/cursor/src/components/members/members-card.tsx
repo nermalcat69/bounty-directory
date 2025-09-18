@@ -3,6 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { extractGitHubUsername, getGitHubProfileUrl } from "@/lib/github-utils";
 
 export function MembersCard({
   member,
@@ -13,13 +14,23 @@ export function MembersCard({
     slug: string;
     image: string;
     name: string;
+    website?: string | null;
+    socialXLink?: string | null;
   };
   gray?: boolean;
   noBorder?: boolean;
 }) {
+  // Extract GitHub username and determine the link
+  const githubUsername = extractGitHubUsername(member);
+  const profileUrl = githubUsername 
+    ? getGitHubProfileUrl(githubUsername)
+    : `/u/${member.slug}`; // Fallback to internal profile if no GitHub found
+
   return (
     <Link
-      href={`/u/${member.slug}`}
+      href={profileUrl}
+      target={githubUsername ? "_blank" : undefined}
+      rel={githubUsername ? "noopener noreferrer" : undefined}
       className={cn(
         "flex border border-border p-2 items-center gap-2 group",
         noBorder && "border-none",

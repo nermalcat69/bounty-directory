@@ -4,10 +4,10 @@ import Link from "next/link";
 
 export type Company = {
   id: string;
-  location: string;
   name: string;
   slug: string;
-  image: string;
+  image: string | null;
+  description: string | null;
 };
 
 export function CompanyCard({ company }: { company: Company }) {
@@ -16,7 +16,7 @@ export function CompanyCard({ company }: { company: Company }) {
       <Link href={`/c/${company.slug}`}>
         <CardHeader className="flex flex-row items-center gap-4 p-0">
           <Avatar className="size-10 border border-border rounded-none">
-            <AvatarImage src={company.image} alt={company.name} />
+            <AvatarImage src={company.image || ""} alt={company.name} />
             <AvatarFallback className="text-sm font-mono rounded-none bg-transparent">
               {company.name.charAt(0)}
             </AvatarFallback>
@@ -27,7 +27,7 @@ export function CompanyCard({ company }: { company: Company }) {
               {company.name}
             </CardTitle>
             <span className="text-xs text-[#878787] font-mono">
-              {company.location}
+              {company.description || "No description"}
             </span>
           </div>
 

@@ -1,31 +1,27 @@
 "use client";
 
-import { createClient } from "@/utils/supabase/client";
+import { signIn } from "@/lib/auth-client";
 import { GithubIcon } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "./ui/button";
 
 export function GithubSignin({ redirectTo }: { redirectTo?: string }) {
-  const supabase = createClient();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? redirectTo ?? "/";
 
   return (
     <Button
       variant="outline"
-      className="border border-border rounded-full"
+      className="bg-white text-black h-8 rounded-full"
       onClick={() => {
-        supabase.auth.signInWithOAuth({
+        signIn.social({
           provider: "github",
-          options: {
-            redirectTo: `${window.location.origin}/auth/callback?next=${next}`,
-          },
+          callbackURL: next,
         });
       }}
     >
       <span className="flex items-center gap-2">
-        <GithubIcon className="w-4 h-4" />
-        Sign in with GitHub
+        Sign with GitHub
       </span>
     </Button>
   );

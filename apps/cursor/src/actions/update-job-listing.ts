@@ -1,6 +1,8 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
+import { db } from "@/db";
+import { jobs, companies } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { authActionClient } from "./safe-action";
@@ -11,7 +13,7 @@ export const updateJobListingAction = authActionClient
   })
   .schema(
     z.object({
-      id: z.number(),
+      id: z.string(),
       title: z.string(),
       company_id: z.string(),
       location: z.string().nullable(),
@@ -35,31 +37,35 @@ export const updateJobListingAction = authActionClient
       },
       ctx: { userId },
     }) => {
-      const supabase = await createClient();
-
-      const { data, error } = await supabase
-        .from("jobs")
-        .update({
+      // First verify ownership through company
+      const [updatedJob] = await db
+        .update(jobs)
+        .set({
           title,
-          company_id,
+          companyId: company_id,
           location,
           description,
           link,
           workplace,
           experience,
         })
-        .eq("id", id)
-        .eq("owner_id", userId)
-        .select("id")
-        .single();
+        .from(jobs)
+        .innerJoin(companies, eq(jobs.companyId, companies.id))
+        .where(
+          and(
+            eq(jobs.id, id),
+            eq(companies.ownerId, userId)
+          )
+        )
+        .returning({ id: jobs.id });
 
-      if (error) {
-        throw new Error(error.message);
+      if (!updatedJob) {
+        throw new Error("Job not found or you don't have permission to modify it");
       }
 
       revalidatePath("/jobs");
       revalidatePath("/");
 
-      return data;
+      return updatedJob;
     },
   );

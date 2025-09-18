@@ -1,6 +1,8 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
+import { db } from "@/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { authActionClient } from "./safe-action";
@@ -35,30 +37,23 @@ export const editProfileAction = authActionClient
       },
       ctx: { userId },
     }) => {
-      const supabase = await createClient();
-
-      const { data, error } = await supabase
-        .from("users")
-        .update({
+      const [updatedUser] = await db
+        .update(users)
+        .set({
           name,
           status,
-          slug: slug ?? undefined,
+          slug: slug || null,
           bio,
           work,
           website,
-          social_x_link,
+          socialXLink: social_x_link,
           public: is_public,
         })
-        .eq("id", userId)
-        .select("id, slug")
-        .single();
+        .where(eq(users.id, userId))
+        .returning({ id: users.id, slug: users.slug });
 
-      if (error) {
-        throw new Error(error.message);
-      }
+      redirect(`/u/${updatedUser.slug}`);
 
-      redirect(`/u/${slug}`);
-
-      return data;
+      return updatedUser;
     },
   );

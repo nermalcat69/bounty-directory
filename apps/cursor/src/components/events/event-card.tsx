@@ -61,7 +61,7 @@ export function EventCard({
               asChild
             >
               <a
-                href={`${eventUrl}?utm_source=cursor.directory&utm_medium=referral&utm_campaign=events-featured`} // Updated campaign name
+                href={`${eventUrl}?utm_source=bounty.directory&utm_medium=referral&utm_campaign=events-featured`} // Updated campaign name
                 target="_blank"
                 rel="noopener noreferrer"
               >

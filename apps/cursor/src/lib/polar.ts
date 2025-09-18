@@ -1,4 +1,3 @@
-import { createClient } from "@/utils/supabase/admin-client";
 import { Polar } from "@polar-sh/sdk";
 import { revalidatePath } from "next/cache";
 
@@ -166,49 +165,37 @@ export async function activateJobListing(
   jobListingId: string,
   productId: string,
 ) {
-  const supabase = await createClient();
-
-  const { data } = await supabase
-    .from("jobs")
-    .update({
-      active: true,
-      order: getJobListingOrderPlan(productId),
-    })
-    .eq("id", jobListingId)
-    .select("*")
-    .single();
-
+  // TODO: Implement job listing activation with current database
+  console.log("Job listing activation - implementation needed");
+  
   revalidatePath("/");
   revalidatePath("/jobs");
   revalidatePath(`/jobs/${jobListingId}`);
 
-  return data;
+  return null;
 }
 
-export async function activateMCPListing(mcpListingId: string) {
-  const supabase = await createClient();
-
-  const { data } = await supabase
-    .from("mcps")
-    .update({ active: true })
-    .eq("id", mcpListingId)
-    .select("*")
-    .single();
-
+export async function activateMCPListing(
+  mcpListingId: string,
+  productId: string,
+) {
+  // TODO: Implement MCP listing activation with current database
+  console.log("MCP listing activation - implementation needed");
+  
   revalidatePath("/");
-  revalidatePath("/mcp");
+  revalidatePath("/mcps");
+  revalidatePath(`/mcps/${mcpListingId}`);
 
-  return data;
+  return null;
 }
 
 export async function downgradeMCPListing(mcpListingId: string) {
-  const supabase = await createClient();
-
-  await supabase
-    .from("mcps")
-    .update({ plan: "standard" })
-    .eq("id", mcpListingId);
+  // TODO: Implement MCP listing downgrade with current database
+  console.log("MCP listing downgrade - implementation needed");
 
   revalidatePath("/");
-  revalidatePath("/mcp");
+  revalidatePath("/mcps");
+  revalidatePath(`/mcps/${mcpListingId}`);
+
+  return null;
 }

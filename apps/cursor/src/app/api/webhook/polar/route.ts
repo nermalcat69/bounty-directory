@@ -25,7 +25,10 @@ export const POST = Webhooks({
       }
 
       case "subscription.active": {
-        await activateMCPListing(payload.data.metadata.mcpListingId as string);
+        await activateMCPListing(
+          payload.data.metadata.mcpListingId as string,
+          payload.data.metadata.plan as string,
+        );
         break;
       }
 

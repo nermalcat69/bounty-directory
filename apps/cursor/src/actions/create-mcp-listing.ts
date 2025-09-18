@@ -1,8 +1,10 @@
 "use server";
 
+import { db } from "@/db";
+import { mcps } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { createMCPListingCheckoutSession } from "@/lib/polar";
 import { createPostRatelimit } from "@/lib/ratelimit";
-import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -36,8 +38,6 @@ export const createMCPListingAction = authActionClient
       },
       ctx: { userId, email, name: customerName },
     }) => {
-      const supabase = await createClient();
-
       const { success } = await createPostRatelimit.limit(
         `create-mcp-listing-${userId}`,
       );
@@ -46,40 +46,35 @@ export const createMCPListingAction = authActionClient
         throw new Error("Too many requests. Please try again later.");
       }
 
-      const { data, error } = await supabase
-        .from("mcps")
-        .insert({
+      // Generate slug from name
+      const slug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+
+      const [newMcp] = await db
+        .insert(mcps)
+        .values({
           name,
-          company_id: company_id === "" ? null : company_id,
-          logo: logo === "" ? null : logo,
+          slug,
+          companyId: company_id === "" ? null : company_id,
           description,
-          mcp_link: mcp_link === "" ? null : mcp_link,
-          link,
+          npmPackage: mcp_link === "" ? null : mcp_link,
+          repository: link,
           plan,
           active: plan === "standard",
         })
-        .select("id")
-        .single();
-
-      if (error) {
-        throw new Error(error.message);
-      }
+        .returning({ id: mcps.id, slug: mcps.slug });
 
       revalidatePath("/mcp");
 
-      const { data: mcp } = await supabase
-        .from("mcps")
-        .select("slug")
-        .eq("id", data.id)
-        .single();
-
-      if (plan === "standard" && mcp) {
-        redirect(`/mcp/${mcp.slug}`);
+      if (plan === "standard" && newMcp.slug) {
+        redirect(`/mcp/${newMcp.slug}`);
       }
 
       const session = await createMCPListingCheckoutSession({
         plan,
-        mcpListingId: data.id,
+        mcpListingId: newMcp.id,
         companyId: company_id ?? "",
         email: email ?? "",
         customerName: customerName ?? "",

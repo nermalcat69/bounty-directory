@@ -2,7 +2,7 @@ import { getCompanies, getMCPs } from "@/data/queries";
 import { getSections } from "@directories/data/rules";
 import type { MetadataRoute } from "next";
 
-const BASE_URL = "https://cursor.directory";
+const BASE_URL = "https://bounty.directory";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Get all rules sections

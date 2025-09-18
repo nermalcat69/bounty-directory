@@ -1,6 +1,5 @@
 "use client";
 
-import { getMCPsClient } from "@/data/client-queries";
 import { useQueryState } from "nuqs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SearchInput } from "../search-input";
@@ -14,7 +13,7 @@ export function MCPsList({ data }: { data?: MCP[] | null }) {
   const [debouncedSearch, setDebouncedSearch] = useState(search);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(false); // Disabled until database queries are replaced
   const observer = useRef<IntersectionObserver | null>(null);
 
   // Debounce search input
@@ -27,19 +26,16 @@ export function MCPsList({ data }: { data?: MCP[] | null }) {
   }, [search]);
 
   useEffect(() => {
-    async function searchData() {
-      const { data } = await getMCPsClient({
-        page: 1,
-        search: debouncedSearch,
-      });
-
-      if (data) {
-        setMcps(data);
-      }
-    }
-
+    // TODO: Implement database search functionality
+    console.log("Search functionality - implementation needed");
+    
+    // For now, just filter the existing data
     if (debouncedSearch && debouncedSearch?.length > 0) {
-      searchData();
+      const filtered = (data ?? []).filter(mcp => 
+        mcp.name?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        mcp.description?.toLowerCase().includes(debouncedSearch.toLowerCase())
+      );
+      setMcps(filtered);
     } else {
       setMcps(data ?? []);
     }
@@ -47,42 +43,10 @@ export function MCPsList({ data }: { data?: MCP[] | null }) {
 
   // Function to load more MCPs
   const loadMoreMCPs = useCallback(async () => {
-    if (loading || !hasMore || debouncedSearch) return;
-
-    setLoading(true);
-    try {
-      const nextPage = page + 1;
-      const { data: newData, error } = await getMCPsClient({
-        page: nextPage,
-        limit: 36 * 2,
-      });
-
-      if (error) {
-        console.error("Error fetching more MCPs:", error);
-        return;
-      }
-
-      if (newData && newData.length > 0) {
-        // Filter out any MCPs that already exist in the current list
-        const existingIds = new Set(mcps.map((mcp) => mcp.id));
-        const uniqueNewData = newData.filter((mcp) => !existingIds.has(mcp.id));
-
-        if (uniqueNewData.length > 0) {
-          setMcps((prevMcps) => [...prevMcps, ...uniqueNewData]);
-          setPage(nextPage);
-        } else {
-          // If we received data but all IDs were duplicates, we've reached the end
-          setHasMore(false);
-        }
-      } else {
-        setHasMore(false);
-      }
-    } catch (error) {
-      console.error("Failed to fetch more MCPs:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, loading, hasMore, debouncedSearch, mcps]);
+    // TODO: Implement pagination functionality
+    console.log("Load more functionality - implementation needed");
+    return;
+  }, []);
 
   // Setup intersection observer for infinite scroll
   const lastMCPElementRef = useCallback(

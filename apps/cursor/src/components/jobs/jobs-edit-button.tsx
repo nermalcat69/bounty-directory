@@ -1,32 +1,20 @@
 "use client";
 
-import { createClient } from "@/utils/supabase/client";
+import { useSession } from "@/lib/auth-client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 
 export function JobsEditButton({
   ownerId,
   id,
 }: { ownerId: string; id: string }) {
-  const supabase = createClient();
-  const [userId, setUserId] = useState<string | null>(null);
+  const { data: session } = useSession();
 
-  useEffect(() => {
-    async function getUser() {
-      const session = await supabase.auth.getSession();
-
-      setUserId(session.data.session?.user?.id ?? null);
-    }
-
-    getUser();
-  }, []);
-
-  if (!userId) {
+  if (!session?.user) {
     return null;
   }
 
-  if (ownerId !== userId) {
+  if (ownerId !== session.user.id) {
     return null;
   }
 

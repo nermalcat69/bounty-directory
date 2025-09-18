@@ -94,7 +94,7 @@ export function JobsCard({
               asChild
             >
               <a
-                href={`${link}?utm_source=cursor.directory&utm_medium=referral&utm_campaign=jobs-featured`}
+                href={`${link}?utm_source=bounty.directory&utm_medium=referral&utm_campaign=jobs-featured`}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -108,7 +108,7 @@ export function JobsCard({
           <CardTitle className="text-md font-normal flex items-center gap-2">
             <span>
               <a
-                href={`${link}?utm_source=cursor.directory&utm_medium=jobs`}
+                href={`${link}?utm_source=bounty.directory&utm_medium=jobs`}
                 target="_blank"
                 rel="noopener noreferrer"
               >

@@ -33,7 +33,7 @@ export const ads: Ad[] = [
     id: "sentry",
     title: "Sentry.io - Build with AI, debug broken code.",
     description:
-      "Monitor your AI agents with Sentry. Cursor.directory users get 3 months free of our team plan here.",
+      "Monitor your AI agents with Sentry. bounty.directory users get 3 months free of our team plan here.",
     logoUrl:
       "https://pub-abe1cd4008f5412abb77357f87d7d7bb.r2.dev/ads-sentry-logo-v2.png",
     imageUrl:

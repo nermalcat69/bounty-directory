@@ -1,5 +1,6 @@
 import { getUserProfile } from "@/data/queries";
-import { getSession } from "@/utils/supabase/auth";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { format } from "date-fns";
 import { Suspense } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
@@ -16,7 +17,9 @@ export async function Profile({
   slug: string;
   isProfilePage?: boolean;
 }) {
-  const session = await getSession();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
   const { data } = await getUserProfile(
     slug,
     isProfilePage ? session?.user?.id : undefined,
@@ -34,13 +37,28 @@ export async function Profile({
 
   return (
     <div className="w-full">
-      <ProfileTop data={data} isOwner={isOwner} />
+      <ProfileTop data={{
+        ...data,
+        hero: data?.hero || "",
+        image: data?.image || "",
+        name: data?.name || "",
+        status: data?.status || "",
+        bio: data?.bio || "",
+        work: data?.work || "",
+        website: data?.website || "",
+        social_x_link: data?.social_x_link || "",
+        public: data?.public || false,
+        slug: data?.slug || "",
+        is_following: data?.is_following || false,
+        following_count: data?.following_count || 0,
+        followers_count: data?.followers_count || 0,
+      }} isOwner={isOwner} />
 
       <ProfileContent
-        bio={data?.bio}
-        work={data?.work}
-        website={data?.website}
-        social_x_link={data?.social_x_link}
+        bio={data?.bio || ""}
+        work={data?.work || ""}
+        website={data?.website || ""}
+        social_x_link={data?.social_x_link || ""}
       />
 
       <Tabs defaultValue="posts" className="w-full mt-14">
@@ -73,7 +91,7 @@ export async function Profile({
 
       <div className="text-sm text-[#878787] flex justify-between items-center border-t border-border pt-6 mt-10">
         <span>Joined Cursor Directory</span>
-        {format(new Date(data?.created_at), "MMM d, yyyy")}
+        {data?.createdAt ? format(new Date(data.createdAt), "MMM d, yyyy") : "Unknown"}
       </div>
     </div>
   );

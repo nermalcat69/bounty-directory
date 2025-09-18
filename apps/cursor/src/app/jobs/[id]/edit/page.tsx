@@ -3,7 +3,7 @@ import { GithubSignin } from "@/components/github-signin";
 import { GoogleSignin } from "@/components/google-signin";
 import { JobListingSwitch } from "@/components/jobs/jobs-listing-switch";
 import { getJobById } from "@/data/queries";
-import { getSession } from "@/utils/supabase/auth";
+import { getSession } from "@/lib/auth-server";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -40,7 +40,7 @@ export default async function Page({ params }: { params: Params }) {
     );
   }
 
-  if (job?.owner_id !== session.user.id) {
+  if (job?.company?.ownerId !== session.user.id) {
     redirect("/jobs");
   }
 
@@ -48,10 +48,20 @@ export default async function Page({ params }: { params: Params }) {
     <div className="mx-auto max-w-screen-sm xl:max-w-screen-sm border-t border-border pt-32 pb-16">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl mb-4">Edit job listing </h1>
-        <JobListingSwitch id={job.id} active={job.active} />
+        <JobListingSwitch id={job.id} active={job.active ?? true} />
       </div>
 
-      <EditJobForm data={job} />
+      <EditJobForm data={{
+        id: job.id,
+        title: job.title,
+        location: job.location || undefined,
+        description: job.description,
+        link: job.link,
+        workplace: job.workplace,
+        experience: job.experience || undefined,
+        company_id: job.companyId,
+        active: job.active ?? true
+      }} />
     </div>
   );
 }

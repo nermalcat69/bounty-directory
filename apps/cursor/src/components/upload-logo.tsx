@@ -1,6 +1,5 @@
 "use client";
 
-import { createClient } from "@/utils/supabase/client";
 import { PlusIcon } from "lucide-react";
 import Image from "next/image";
 import { type ChangeEvent, type DragEvent, useRef, useState } from "react";
@@ -42,30 +41,10 @@ export default function UploadLogo({
       };
       reader.readAsDataURL(file);
 
-      // Upload to Supabase Storage
-      const supabase = createClient();
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-
-      const { data, error } = await supabase.storage
-        .from("avatars")
-        .upload(`${prefix}/${fileName}`, file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-
-      if (error) {
-        throw error;
-      }
-
-      // Get public URL
-      const {
-        data: { publicUrl },
-      } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(`${prefix}/${fileName}`);
-
-      onUpload?.(publicUrl);
+      // TODO: Implement file storage solution
+      console.log("File upload functionality - implementation needed");
+      // For now, just use the preview URL
+      onUpload?.(preview || "");
     } catch (error) {
       console.error("Error uploading file:", error);
     } finally {

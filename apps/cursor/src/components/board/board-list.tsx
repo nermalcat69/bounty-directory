@@ -1,7 +1,7 @@
 "use client";
 
-import { isAuthenticated as isAuthenticatedClient } from "@/utils/supabase/client-session";
-import { useEffect, useState } from "react";
+import { useSession } from "@/lib/auth-client";
+import { useState } from "react";
 import { CreatePostModal } from "../modals/create-post-modal";
 import { SignInModal } from "../modals/sign-in-modal";
 import { Button } from "../ui/button";
@@ -23,13 +23,10 @@ type BoardListProps = {
 };
 
 export default function BoardList({ popularPosts }: BoardListProps) {
+  const { data: session } = useSession();
+  const isAuthenticated = !!session?.user;
   const [isOpen, setIsOpen] = useState(false);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    setIsAuthenticated(isAuthenticatedClient());
-  }, []);
 
   const handleCreatePost = () => {
     if (!isAuthenticated) {

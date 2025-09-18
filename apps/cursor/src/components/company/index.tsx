@@ -1,5 +1,5 @@
 import { getCompanyProfile } from "@/data/queries";
-import { getSession } from "@/utils/supabase/auth";
+import { getSession } from "@/lib/auth-server";
 import { format } from "date-fns";
 import { CompanyContent } from "./company-content";
 import { CompanyHeader } from "./company-header";
@@ -19,7 +19,7 @@ export async function Company({
     isCompanyPage ? session?.user?.id : undefined,
   );
 
-  const isOwner = session?.user?.id === data?.owner_id;
+  const isOwner = session?.user?.id === data?.ownerId;
 
   if (!data) {
     return (
@@ -31,25 +31,25 @@ export async function Company({
 
   return (
     <div className="w-full">
-      <CompanyHero companyId={data?.id} isOwner={isOwner} hero={data?.hero} />
+      <CompanyHero companyId={data?.id} isOwner={isOwner} hero={data?.hero || ""} />
 
       <CompanyHeader
         id={data?.id}
         image={data?.image}
         name={data?.name}
-        location={data?.location}
+        location={""} // location field doesn't exist in companies schema
         isOwner={isOwner}
-        bio={data?.bio}
-        website={data?.website}
-        social_x_link={data?.social_x_link}
-        is_public={data?.public}
+        bio={data?.description || ""}
+        website={data?.website || ""}
+        social_x_link={""} // social_x_link field doesn't exist in companies schema
+        is_public={true} // public field doesn't exist in companies schema, defaulting to true
         slug={data?.slug}
       />
 
       <CompanyContent
-        bio={data?.bio}
-        website={data?.website}
-        social_x_link={data?.social_x_link}
+        bio={data?.description || ""}
+        website={data?.website || ""}
+        social_x_link={""} // social_x_link field doesn't exist in companies schema
       />
 
       <CompanyJobs slug={data?.slug} />
@@ -57,7 +57,7 @@ export async function Company({
       <div className="my-14 space-y-10 w-full">
         <div className="text-sm text-[#878787] flex justify-between items-center border-t border-border pt-6">
           <span>Joined Cursor Directory</span>
-          {format(new Date(data?.created_at), "MMM d, yyyy")}
+          {data?.createdAt ? format(new Date(data.createdAt), "MMM d, yyyy") : "Unknown"}
         </div>
       </div>
     </div>

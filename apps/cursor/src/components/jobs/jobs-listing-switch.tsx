@@ -6,7 +6,7 @@ import { useOptimisticAction } from "next-safe-action/hooks";
 import { toast } from "sonner";
 
 interface JobListingSwitchProps {
-  id: number;
+  id: string;
   active: boolean;
 }
 

@@ -2,8 +2,9 @@
 
 import FollowerEmail from "@/emails/templates/follower";
 import { resend } from "@/lib/resend";
-import { createClient as createAdminClient } from "@/utils/supabase/admin-client";
-import { createClient } from "@/utils/supabase/server";
+import { db } from "@/db";
+import { followers, users } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 import { waitUntil } from "@vercel/functions";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -25,62 +26,49 @@ export const toggleFollowAction = authActionClient
       parsedInput: { userId, action, slug },
       ctx: { userId: currentUserId },
     }) => {
-      const supabase = await createClient();
-      const adminClient = await createAdminClient();
-
       if (action === "follow") {
-        const { data, error } = await supabase
-          .from("followers")
-          .insert({ follower_id: currentUserId, following_id: userId })
-          .select("follower:follower_id(name, slug, email)")
-          .single();
-
-        if (error) {
-          throw new Error(error.message);
-        }
+        await db
+          .insert(followers)
+          .values({ followerId: currentUserId, followingId: userId });
 
         revalidatePath(`/u/${slug}`);
 
-        if (data.follower) {
-          const { data: userData } = await adminClient
-            .from("users")
-            .select("email, name, follow_email")
-            .eq("id", userId)
-            .single();
+        // Get follower and following user data for email
+        const followerData = await db
+          .select({ name: users.name, slug: users.slug, email: users.email })
+          .from(users)
+          .where(eq(users.id, currentUserId))
+          .limit(1);
 
-          if (!userData) {
-            throw new Error("User not found");
-          }
+        const followingData = await db
+          .select({ email: users.email, name: users.name, followEmail: users.followEmail })
+          .from(users)
+          .where(eq(users.id, userId))
+          .limit(1);
 
-          if (userData.follow_email) {
-            waitUntil(
-              resend.emails.send({
-                from: "Cursor Directory <hello@transactional.cursor.directory>",
-                to: userData.email!,
-                //   @ts-ignore
-                subject: `${data.follower.name} is now following you on Cursor Directory`,
-                react: FollowerEmail({
-                  name: userData.name!,
-                  // @ts-ignore
-                  followerName: data.follower.name!,
-                  // @ts-ignore
-                  followerSlug: data.follower.slug!,
-                  followingSlug: slug,
-                }),
-              }),
-            );
-          }
+        if (followerData[0] && followingData[0] && followingData[0].followEmail) {
+          waitUntil(
+            resend.emails.send({
+              from: "Cursor Directory <hello@transactional.bounty.directory>",
+              to: followingData[0].email!,
+              subject: `${followerData[0].name} is now following you on Cursor Directory`,
+              react: FollowerEmail({
+                 name: followingData[0].name!,
+                 followerName: followerData[0].name!,
+                 followerSlug: followerData[0].slug!,
+                 followingSlug: slug,
+               }),
+            }),
+          );
         }
 
         return;
       }
 
       if (action === "unfollow") {
-        await supabase
-          .from("followers")
-          .delete()
-          .eq("follower_id", currentUserId)
-          .eq("following_id", userId);
+        await db
+          .delete(followers)
+          .where(and(eq(followers.followerId, currentUserId), eq(followers.followingId, userId)));
       }
 
       revalidatePath(`/u/${slug}`);

@@ -1,7 +1,7 @@
 import { MembersCard } from "@/components/members/members-card";
 import { ProfileTop } from "@/components/profile/profile-top";
 import { getUserFollowers, getUserProfile } from "@/data/queries";
-import { getSession } from "@/utils/supabase/auth";
+import { getSession } from "@/lib/auth-server";
 import { redirect } from "next/navigation";
 
 type Params = Promise<{ slug: string }>;
@@ -20,8 +20,6 @@ export default async function Page({ params }: { params: Params }) {
   const { slug } = await params;
 
   const { data } = await getUserProfile(slug);
-
-  const { data: followers } = await getUserFollowers(data?.id);
   const session = await getSession();
 
   if (!session) {
@@ -36,10 +34,27 @@ export default async function Page({ params }: { params: Params }) {
     );
   }
 
+  const { data: followers } = await getUserFollowers(data.id);
+
   return (
     <div className="flex mx-auto max-w-4xl min-h-screen w-full md:mt-28 mt-14 px-6 lg:px-0">
       <div className="w-full">
-        <ProfileTop data={data} isOwner={false} />
+        <ProfileTop data={{
+          id: data.id,
+          hero: data.hero || "",
+          image: data.image || "",
+          name: data.name || "",
+          status: data.status || "",
+          bio: data.bio || "",
+          work: data.work || "",
+          website: data.website || "",
+          social_x_link: data.social_x_link || "",
+          public: data.public || false,
+          slug: data.slug || "",
+          is_following: data.is_following || false,
+          following_count: data.following_count || 0,
+          followers_count: data.followers_count || 0,
+        }} isOwner={false} />
 
         <div className="mt-10">
           <h3 className="text-lg font-mono">Followers</h3>
@@ -49,10 +64,14 @@ export default async function Page({ params }: { params: Params }) {
             )}
             {followers?.map((user) => (
               <MembersCard
-                // @ts-ignore
                 key={user.follower.id}
-                // @ts-ignore
-                member={user.follower}
+                member={{
+                  slug: user.follower.slug || '',
+                  image: user.follower.image || '',
+                  name: user.follower.name || '',
+                  website: user.follower.website,
+                  socialXLink: user.follower.socialXLink,
+                }}
                 noBorder
               />
             ))}
