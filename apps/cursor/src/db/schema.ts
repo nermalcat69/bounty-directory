@@ -34,9 +34,6 @@ export const users = pgTable("users", {
   website: text("website"),
   socialXLink: text("social_x_link"),
   public: boolean("public"),
-  followEmail: boolean("follow_email"),
-  followerCount: integer("follower_count"),
-  followingCount: integer("following_count"),
 });
 
 // Companies table
@@ -93,13 +90,7 @@ export const mcps = pgTable("mcps", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Followers table (many-to-many relationship)
-export const followers = pgTable("followers", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  followerId: text("follower_id").references(() => users.id).notNull(),
-  followingId: text("following_id").references(() => users.id).notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+// Follow functionality removed - followers table deleted
 
 // Votes table
 export const votes = pgTable("votes", {
@@ -171,8 +162,6 @@ export const account = pgTable("account", {
 export const usersRelations = relations(users, ({ many }) => ({
   posts: many(posts),
   companies: many(companies),
-  followers: many(followers, { relationName: "follower" }),
-  following: many(followers, { relationName: "following" }),
   votes: many(votes),
   sessions: many(session),
   accounts: many(account),
@@ -209,18 +198,7 @@ export const mcpsRelations = relations(mcps, ({ one }) => ({
   }),
 }));
 
-export const followersRelations = relations(followers, ({ one }) => ({
-  follower: one(users, {
-    fields: [followers.followerId],
-    references: [users.id],
-    relationName: "follower",
-  }),
-  following: one(users, {
-    fields: [followers.followingId],
-    references: [users.id],
-    relationName: "following",
-  }),
-}));
+// Follow functionality removed - followersRelations deleted
 
 export const votesRelations = relations(votes, ({ one }) => ({
   user: one(users, {

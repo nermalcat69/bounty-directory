@@ -3,7 +3,6 @@ import {
   users, 
   posts, 
   companies, 
-  followers, 
   jobs, 
   mcps, 
   votes,
@@ -28,9 +27,6 @@ export async function getUserProfile(userId: string) {
       socialXLink: users.socialXLink,
       createdAt: users.createdAt,
       public: users.public,
-      followEmail: users.followEmail,
-      followerCount: users.followerCount,
-      followingCount: users.followingCount,
     })
     .from(users)
     .where(eq(users.id, userId))
@@ -59,33 +55,7 @@ export async function getUserProfile(userId: string) {
   };
 }
 
-export async function getUserFollowers(userId: string) {
-  return await db
-    .select({
-      id: users.id,
-      name: users.name,
-      image: users.image,
-      slug: users.slug,
-    })
-    .from(followers)
-    .innerJoin(users, eq(followers.followerId, users.id))
-    .where(eq(followers.followingId, userId))
-    .orderBy(desc(followers.createdAt));
-}
-
-export async function getUserFollowing(userId: string) {
-  return await db
-    .select({
-      id: users.id,
-      name: users.name,
-      image: users.image,
-      slug: users.slug,
-    })
-    .from(followers)
-    .innerJoin(users, eq(followers.followingId, users.id))
-    .where(eq(followers.followerId, userId))
-    .orderBy(desc(followers.createdAt));
-}
+// Follow functionality removed - getUserFollowers and getUserFollowing functions deleted
 
 // Post queries
 export async function getPopularPosts() {

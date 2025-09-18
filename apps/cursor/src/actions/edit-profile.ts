@@ -52,7 +52,7 @@ export const editProfileAction = authActionClient
         .where(eq(users.id, userId))
         .returning({ id: users.id, slug: users.slug });
 
-      redirect(`/u/${updatedUser.slug}`);
+      redirect("/");
 
       return updatedUser;
     },

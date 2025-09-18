@@ -27,15 +27,46 @@ export function MembersCard({
   const githubUsername = githubSlugMatch 
     ? githubSlugMatch[1] // Extract username part before the ID
     : extractGitHubUsername(member);
-  const profileUrl = githubUsername 
-    ? getGitHubProfileUrl(githubUsername)
-    : `/u/${member.slug}`; // Fallback to internal profile
+  
+  // Always link to GitHub profile if username is available, otherwise don't link
+  const profileUrl = githubUsername ? getGitHubProfileUrl(githubUsername) : null;
+
+  if (!profileUrl) {
+    // If no GitHub profile found, render as non-clickable card
+    return (
+      <div
+        className={cn(
+          "flex border border-border p-2 items-center gap-2",
+          noBorder && "border-none",
+        )}
+      >
+        <Avatar className="rounded-none">
+          <AvatarImage
+            src={member.image}
+            alt={member.name}
+            className={cn(
+              "rounded-none",
+              gray
+                ? "grayscale transition-all duration-300"
+                : "",
+            )}
+          />
+          <AvatarFallback className="rounded-none">
+            {member.name.charAt(0)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="text-xs text-[#878787] font-mono font-medium">
+          {member.name}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Link
       href={profileUrl}
-      target={githubUsername ? "_blank" : undefined}
-      rel={githubUsername ? "noopener noreferrer" : undefined}
+      target="_blank"
+      rel="noopener noreferrer"
       className={cn(
         "flex border border-border p-2 items-center gap-2 group",
         noBorder && "border-none",

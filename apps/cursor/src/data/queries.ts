@@ -1,17 +1,31 @@
 import { db } from "@/db";
-import { users, posts, votes, followers, companies, jobs, mcps } from "@/db/schema";
+import { users, posts, votes, companies, jobs, mcps } from "@/db/schema";
 import { eq, and, desc, count, or, asc, ne, ilike } from "drizzle-orm";
 
-export async function getUserProfile(slug: string, userId?: string) {
-  const whereConditions = userId 
-    ? and(eq(users.slug, slug), eq(users.id, userId))
-    : and(eq(users.slug, slug), eq(users.public, true));
+export async function getUserProfile(slugOrId: string, userId?: string) {
+  // First try to find by slug
+  let whereConditions = userId 
+    ? and(eq(users.slug, slugOrId), eq(users.id, userId))
+    : and(eq(users.slug, slugOrId), eq(users.public, true));
 
-  const userData = await db
+  let userData = await db
     .select()
     .from(users)
     .where(whereConditions)
     .limit(1);
+
+  // If not found by slug, try to find by ID
+  if (!userData.length) {
+    whereConditions = userId 
+      ? and(eq(users.id, slugOrId), eq(users.id, userId))
+      : and(eq(users.id, slugOrId), eq(users.public, true));
+
+    userData = await db
+      .select()
+      .from(users)
+      .where(whereConditions)
+      .limit(1);
+  }
 
   if (!userData.length) {
     return {
@@ -37,27 +51,13 @@ export async function getUserProfile(slug: string, userId?: string) {
     .groupBy(posts.id)
     .orderBy(desc(posts.createdAt));
 
-  // Get follower and following counts
-  const [followerCount] = await db
-    .select({ count: count() })
-    .from(followers)
-    .where(eq(followers.followingId, user.id));
-
-  const [followingCount] = await db
-    .select({ count: count() })
-    .from(followers)
-    .where(eq(followers.followerId, user.id));
+  // Follow functionality removed
 
   return {
     data: {
       ...user,
       social_x_link: user.socialXLink,
-      follow_email: user.followEmail,
       created_at: user.createdAt,
-      follower_count: user.followerCount,
-      following_count: followingCount?.count || 0,
-      followers_count: followerCount?.count || 0,
-      is_following: false, // This would need to be calculated based on current user
       posts: userPosts.map((post) => ({
         ...post,
         user_avatar: user.image,
@@ -68,51 +68,7 @@ export async function getUserProfile(slug: string, userId?: string) {
   };
 }
 
-export async function getUserFollowers(id: string) {
-  try {
-    const data = await db
-      .select({
-        follower: {
-          id: users.id,
-          name: users.name,
-          image: users.image,
-          slug: users.slug,
-          website: users.website,
-          socialXLink: users.socialXLink,
-        },
-      })
-      .from(followers)
-      .innerJoin(users, eq(followers.followerId, users.id))
-      .where(eq(followers.followingId, id));
-
-    return { data, error: null };
-  } catch (error) {
-    return { data: null, error };
-  }
-}
-
-export async function getUserFollowing(id: string) {
-  try {
-    const data = await db
-      .select({
-        following: {
-          id: users.id,
-          name: users.name,
-          image: users.image,
-          slug: users.slug,
-          website: users.website,
-          socialXLink: users.socialXLink,
-        },
-      })
-      .from(followers)
-      .innerJoin(users, eq(followers.followingId, users.id))
-      .where(eq(followers.followerId, id));
-
-    return { data, error: null };
-  } catch (error) {
-    return { data: null, error };
-  }
-}
+// Follow functionality removed - getUserFollowers and getUserFollowing functions deleted
 
 export async function getPopularPosts() {
   try {
@@ -128,11 +84,12 @@ export async function getPopularPosts() {
         user_name: users.name,
         user_avatar: users.image,
         user_slug: users.slug,
+        user_website: users.website,
       })
       .from(posts)
       .leftJoin(votes, eq(posts.id, votes.postId))
       .leftJoin(users, eq(posts.userId, users.id))
-      .groupBy(posts.id, users.id, users.name, users.image, users.slug)
+      .groupBy(posts.id, users.id, users.name, users.image, users.slug, users.website)
       .orderBy(desc(count(votes.id)))
       .limit(50);
 
@@ -156,6 +113,7 @@ export async function getPopularPosts() {
         user_name: post.user_name || "Unknown",
         user_avatar: post.user_avatar || "",
         user_slug: post.user_slug || "",
+        user_website: post.user_website || "",
         slug: post.post_id, // Using post id as slug
         has_voted: false, // This would need to be calculated based on current user
       };

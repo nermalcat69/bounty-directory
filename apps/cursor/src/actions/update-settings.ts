@@ -25,7 +25,7 @@ export const updateSettingsAction = authActionClient
       .where(eq(users.id, userId))
       .returning({ id: users.id, slug: users.slug });
 
-    revalidatePath(`/u/${updatedUser.slug}/settings`);
+    // User profile settings removed - no need to revalidate
 
     return updatedUser;
   });
