@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Grid3X3, LayoutGrid, Grid2X2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +19,8 @@ interface BountyFiltersProps {
   totalBounties: number;
   selectedSort: string;
   onSortChange: (sort: string) => void;
+  selectedLayout: string;
+  onLayoutChange: (layout: string) => void;
 }
 
 export function BountyFilters({ 
@@ -26,7 +28,9 @@ export function BountyFilters({
   onLanguageChange, 
   totalBounties,
   selectedSort,
-  onSortChange
+  onSortChange,
+  selectedLayout,
+  onLayoutChange
 }: BountyFiltersProps) {
   const [languages, setLanguages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -107,8 +111,52 @@ export function BountyFilters({
             </Button>
           ))}
           
-          {/* Sort Dropdown */}
-          <div className="ml-auto">
+          {/* Layout Toggle and Sort Dropdown */}
+          <div className="ml-auto flex items-center gap-3">
+            {/* Layout Toggle Buttons */}
+            <div className="flex items-center border border-border rounded-full p-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  "h-8 w-8 p-0 rounded-full",
+                  selectedLayout === "compact" 
+                    ? "bg-neutral-900 text-white hover:bg-neutral-700" 
+                    : "hover:bg-neutral-100"
+                )}
+                onClick={() => onLayoutChange("compact")}
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  "h-8 w-8 p-0 rounded-full",
+                  selectedLayout === "comfortable" 
+                    ? "bg-neutral-900 text-white hover:bg-neutral-700" 
+                    : "hover:bg-neutral-100"
+                )}
+                onClick={() => onLayoutChange("comfortable")}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  "h-8 w-8 p-0 rounded-full",
+                  selectedLayout === "spacious" 
+                    ? "bg-neutral-900 text-white hover:bg-neutral-700" 
+                    : "hover:bg-neutral-100"
+                )}
+                onClick={() => onLayoutChange("spacious")}
+              >
+                <Grid2X2 className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {/* Sort Dropdown */}
             <Select value={selectedSort} onValueChange={onSortChange}>
               <SelectTrigger className="w-[180px] space-x-1 flex rounded-full">
                 <SelectValue placeholder="Sort by..." />

@@ -7,6 +7,8 @@ import { BountyList } from "./bounty-list";
 export function BountyPage() {
   const [selectedLanguage, setSelectedLanguage] = useState("all");
   const [totalBounties, setTotalBounties] = useState(0);
+  const [selectedSort, setSelectedSort] = useState("recent");
+  const [selectedLayout, setSelectedLayout] = useState("comfortable");
 
   return (
     <div className="min-h-screen bg-background">
@@ -28,6 +30,8 @@ export function BountyPage() {
             <BountyList
               selectedLanguage={selectedLanguage}
               onTotalBountiesChange={setTotalBounties}
+              selectedSort={selectedSort}
+              selectedLayout={selectedLayout}
             />
           </div>
         </div>

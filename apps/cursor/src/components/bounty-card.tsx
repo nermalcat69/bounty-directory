@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { ExternalLink, Star, GitBranch } from "lucide-react";
+import { ExternalLink, Star, GitBranch, DollarSign } from "lucide-react";
 import type { BountyIssue } from "@/app/api/bounties/route";
 
 export function BountyCard({ bounty, isPage }: { bounty: BountyIssue; isPage?: boolean }) {
@@ -21,6 +21,13 @@ export function BountyCard({ bounty, isPage }: { bounty: BountyIssue; isPage?: b
     });
   };
 
+  const formatStarCount = (count: number) => {
+    if (count >= 1000) {
+      return (count / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    }
+    return count.toString();
+  };
+
   return (
     <Link 
       href={bounty.html_url} 
@@ -30,70 +37,75 @@ export function BountyCard({ bounty, isPage }: { bounty: BountyIssue; isPage?: b
     >
       <Card
         className={cn(
-          "bg-background p-3 flex flex-col h-48 min-h-48 cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02]",
+          "bg-neutral-950 border-neutral-800 p-3 flex flex-col aspect-square max-w-80 cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.01] hover:border-neutral-700",
         )}
       >
         <CardContent
           className={cn(
-            "bg-card p-3 text-sm opacity-50 hover:opacity-100 transition-opacity group relative flex flex-col",
+            "bg-neutral-900 border border-neutral-800 rounded-lg p-4 text-sm opacity-70 hover:opacity-100 transition-opacity group relative flex flex-col h-full",
             isPage && "opacity-100",
           )}
         >
-          {/* Bounty amount - Absolute positioned in top right */}
-          {bounty.bounty_amount && (
-            <div className="absolute top-2 right-2 z-20">
-              <div className="bg-black dark:bg-black text-white px-2.5 py-1.5 rounded-full text-xs font-bold tracking-wide shadow-xl border border-gray-800 opacity-100">
-                {bounty.bounty_amount}
-              </div>
-            </div>
-          )}
 
-        <div className="flex flex-col space-y-3">
-          {/* Header with repository info */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 min-w-0">
-              <GitBranch className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-              <span className="text-xs text-muted-foreground truncate">
+        <div className="flex flex-col h-full">
+          {/* Header with repository info and bounty amount */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center space-x-2 min-w-0 flex-1">
+              <GitBranch className="w-4 h-4 text-neutral-400 flex-shrink-0" />
+              <span className="text-xs text-neutral-400 truncate overflow-hidden">
                 {bounty.repository.full_name}
               </span>
             </div>
-            {bounty.repository.stargazers_count > 0 && (
-              <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                <Star className="w-3 h-3" />
-                <span>{bounty.repository.stargazers_count}</span>
-              </div>
+            <div className="flex items-center space-x-2">
+              {bounty.bounty_amount && (
+                <div className="flex items-center space-x-1 bg-green-900/30 border border-green-700/50 px-2 py-1 rounded-full">
+                  <span className="text-xs text-green-400 font-medium">
+                    {bounty.bounty_amount}
+                  </span>
+                </div>
+              )}
+              {bounty.repository.stargazers_count > 0 && (
+                <div className="flex items-center space-x-1 text-xs text-neutral-400">
+                  <Star className="w-3 h-3" />
+                  <span>{formatStarCount(bounty.repository.stargazers_count)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Title - takes up available space */}
+          <div className="flex-1 mb-auto">
+            <h3 className="font-semibold text-neutral-100 text-sm leading-tight line-clamp-3 break-words overflow-hidden">
+              {bounty.title}
+            </h3>
+          </div>
+
+          {/* Language - always takes up space for consistency */}
+          <div className="flex items-center space-x-2 mb-3 h-5">
+            {bounty.repository.language ? (
+              <>
+                <div
+                  className="w-3 h-3 rounded-full"
+                  style={{
+                    backgroundColor: getLanguageColor(bounty.repository.language)
+                  }}
+                />
+                <span className="text-xs text-neutral-400">{bounty.repository.language}</span>
+              </>
+            ) : (
+              <div className="w-3 h-3" />
             )}
           </div>
 
-          {/* Title */}
-          <h3 className="font-semibold text-foreground text-sm leading-tight">
-            {truncateText(bounty.title, 80)}
-          </h3>
-
-
-
-          {/* Language */}
-          {bounty.repository.language && (
-            <div className="flex items-center space-x-2">
-              <div
-                className="w-3 h-3 rounded-full"
-                style={{
-                  backgroundColor: getLanguageColor(bounty.repository.language)
-                }}
-              />
-              <span className="text-xs text-muted-foreground">{bounty.repository.language}</span>
-            </div>
-          )}
-
-          {/* Footer with author and date */}
-          <div className="flex items-center justify-between pt-2 border-t border-border">
-            <div className="flex items-center space-x-2">
-              <Avatar className="w-5 h-5">
+          {/* Footer with author and date - stays at bottom */}
+          <div className="flex items-center justify-between pt-3 border-t border-neutral-700 mt-auto">
+            <div className="flex items-center space-x-2 min-w-0 flex-1">
+              <Avatar className="w-5 h-5 flex-shrink-0">
                 <img src={bounty.user.avatar_url} alt={bounty.user.login} />
               </Avatar>
-              <span className="text-xs text-muted-foreground">{bounty.user.login}</span>
+              <span className="text-xs text-neutral-400 truncate overflow-hidden">{bounty.user.login}</span>
             </div>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-neutral-500">
               {formatDate(bounty.updated_at)}
             </span>
           </div>

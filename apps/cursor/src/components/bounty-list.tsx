@@ -1,95 +1,116 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { BountyCard } from "./bounty-card";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import type { BountyIssue } from "@/app/api/bounties/route";
 
 interface BountyListProps {
   selectedLanguage: string;
   onTotalBountiesChange: (total: number) => void;
   selectedSort: string;
+  selectedLayout: string;
 }
 
-const ITEMS_PER_PAGE = 12;
+const ITEMS_PER_LOAD = 30;
 
-export function BountyList({ selectedLanguage, onTotalBountiesChange, selectedSort }: BountyListProps) {
+const getGridClasses = (layout: string) => {
+  switch (layout) {
+    case "compact":
+      return "grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6";
+    case "spacious":
+      return "grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-8 justify-center";
+    case "comfortable":
+    default:
+      return "grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 justify-center";
+  }
+};
+
+export function BountyList({ selectedLanguage, onTotalBountiesChange, selectedSort, selectedLayout }: BountyListProps) {
   const [bounties, setBounties] = useState<BountyIssue[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
 
-  useEffect(() => {
-    const fetchBounties = async () => {
+  const fetchBounties = useCallback(async (currentOffset: number, isLoadMore = false) => {
+    if (isLoadMore) {
+      setLoadingMore(true);
+    } else {
       setLoading(true);
-      try {
-        const params = new URLSearchParams({
-          page: currentPage.toString(),
-          per_page: ITEMS_PER_PAGE.toString(),
-        });
+    }
 
-        if (selectedLanguage && selectedLanguage !== "all") {
-          params.append("language", selectedLanguage);
-        }
+    try {
+      const params = new URLSearchParams({
+        limit: ITEMS_PER_LOAD.toString(),
+        offset: currentOffset.toString(),
+      });
 
-        if (selectedSort) {
-          params.append("sort", selectedSort);
-        }
-
-        const response = await fetch(`/api/bounties?${params}`);
-        
-        if (response.ok) {
-          const data = await response.json();
-          setBounties(data.items || []);
-          setTotalCount(data.total_count || 0);
-          setTotalPages(Math.ceil((data.total_count || 0) / ITEMS_PER_PAGE));
-          onTotalBountiesChange(data.total_count || 0);
-        }
-      } catch (error) {
-        console.error("Error fetching bounties:", error);
-      } finally {
-        setLoading(false);
+      if (selectedLanguage && selectedLanguage !== "all") {
+        params.append("language", selectedLanguage);
       }
-    };
 
-    fetchBounties();
-  }, [selectedLanguage, currentPage, selectedSort, onTotalBountiesChange]);
+      if (selectedSort) {
+        params.append("sort", selectedSort);
+      }
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+      const response = await fetch(`/api/bounties?${params}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (isLoadMore) {
+          setBounties(prev => {
+            const existingIds = new Set(prev.map((bounty: BountyIssue) => bounty.id));
+            const newBounties = (data.items || []).filter((bounty: BountyIssue) => !existingIds.has(bounty.id));
+            return [...prev, ...newBounties];
+          });
+        } else {
+          setBounties(data.items || []);
+        }
+        
+        setTotalCount(data.total_count || 0);
+        setHasMore(data.has_more || false);
+        setOffset(data.next_offset || currentOffset + ITEMS_PER_LOAD);
+        onTotalBountiesChange(data.total_count || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching bounties:", error);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }, [selectedLanguage, selectedSort, onTotalBountiesChange]);
+
+  const loadMore = useCallback(() => {
+    if (!loadingMore && hasMore) {
+      fetchBounties(offset, true);
+    }
+  }, [fetchBounties, offset, loadingMore, hasMore]);
+
+  useInfiniteScroll({
+    hasMore,
+    isLoading: loadingMore,
+    onLoadMore: loadMore,
+    threshold: 200
+  });
+
+  useEffect(() => {
+    setOffset(0);
+    setHasMore(true);
+    fetchBounties(0, false);
+  }, [selectedLanguage, selectedSort, fetchBounties]);
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-5 w-32" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(ITEMS_PER_PAGE)].map((_, i) => (
-            <div key={i} className="space-y-3 p-4 border rounded-lg">
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-20 w-full" />
-              <div className="flex gap-2">
-                <Skeleton className="h-6 w-16" />
-                <Skeleton className="h-6 w-20" />
-                <Skeleton className="h-6 w-24" />
-              </div>
-              <div className="flex items-center justify-between pt-2">
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-5 w-5 rounded-full" />
-                  <Skeleton className="h-4 w-16" />
-                </div>
-                <Skeleton className="h-4 w-20" />
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className={`grid ${getGridClasses(selectedLayout)}`}>
+        {Array.from({ length: ITEMS_PER_LOAD }).map((_, index) => (
+          <div key={index} className="space-y-3">
+            <Skeleton className="aspect-square w-full rounded-lg bg-neutral-800 border border-neutral-700" />
+          </div>
+        ))}
       </div>
     );
   }
@@ -97,11 +118,8 @@ export function BountyList({ selectedLanguage, onTotalBountiesChange, selectedSo
   if (bounties.length === 0) {
     return (
       <div className="text-center py-12">
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No bounties found</h3>
-        <p className="text-gray-600">
-          {selectedLanguage === "all" 
-            ? "No bounties are currently available." 
-            : `No bounties found for ${selectedLanguage}.`}
+        <p className="text-neutral-400">
+          No bounties found{selectedLanguage !== "all" ? ` for ${selectedLanguage}` : ""}.
         </p>
       </div>
     );
@@ -109,75 +127,29 @@ export function BountyList({ selectedLanguage, onTotalBountiesChange, selectedSo
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">
-          {selectedLanguage === "all" ? "All Bounties" : `${selectedLanguage} Bounties`}
-        </h1>
-        <p className="text-sm text-gray-600">
-          {totalCount} bounties found
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className={`grid ${getGridClasses(selectedLayout)}`}>
         {bounties.map((bounty) => (
           <BountyCard key={bounty.id} bounty={bounty} />
         ))}
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-8">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Previous
-          </Button>
-          
-          <div className="flex items-center gap-1">
-            {[...Array(Math.min(5, totalPages))].map((_, i) => {
-              const page = i + 1;
-              const isCurrentPage = page === currentPage;
-              
-              return (
-                <Button
-                  key={page}
-                  variant={isCurrentPage ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handlePageChange(page)}
-                  className="w-8 h-8 p-0"
-                >
-                  {page}
-                </Button>
-              );
-            })}
-            
-            {totalPages > 5 && (
-              <>
-                <span className="px-2">...</span>
-                <Button
-                  variant={currentPage === totalPages ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handlePageChange(totalPages)}
-                  className="w-8 h-8 p-0"
-                >
-                  {totalPages}
-                </Button>
-              </>
-            )}
-          </div>
+      {/* Loading more indicator */}
+      {loadingMore && (
+        <div className={`grid ${getGridClasses(selectedLayout)}`}>
+          {Array.from({ length: 10 }).map((_, index) => (
+            <div key={`loading-${index}`} className="space-y-3">
+              <Skeleton className="aspect-square w-full rounded-lg bg-neutral-800 border border-neutral-700" />
+            </div>
+          ))}
+        </div>
+      )}
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            Next
-            <ChevronRight className="w-4 h-4" />
-          </Button>
+      {/* End of results indicator */}
+      {!hasMore && bounties.length > 0 && (
+        <div className="text-center py-8">
+          <p className="text-neutral-500 text-sm">
+            You've reached the end of the bounties list
+          </p>
         </div>
       )}
     </div>

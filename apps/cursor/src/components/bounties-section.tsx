@@ -8,6 +8,7 @@ export function BountiesSection() {
   const [selectedLanguage, setSelectedLanguage] = useState("all");
   const [totalBounties, setTotalBounties] = useState(0);
   const [selectedSort, setSelectedSort] = useState("recent");
+  const [selectedLayout, setSelectedLayout] = useState("comfortable");
 
   return (
     <div className="w-full">
@@ -18,6 +19,8 @@ export function BountiesSection() {
         totalBounties={totalBounties}
         selectedSort={selectedSort}
         onSortChange={setSelectedSort}
+        selectedLayout={selectedLayout}
+        onLayoutChange={setSelectedLayout}
       />
 
       {/* Main Content - Full Width */}
@@ -26,6 +29,7 @@ export function BountiesSection() {
           selectedLanguage={selectedLanguage}
           onTotalBountiesChange={setTotalBounties}
           selectedSort={selectedSort}
+          selectedLayout={selectedLayout}
         />
       </div>
     </div>

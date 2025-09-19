@@ -33,6 +33,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const language = searchParams.get("language");
     const page = searchParams.get("page") || "1";
+    const limit = parseInt(searchParams.get("limit") || "30");
+    const offset = parseInt(searchParams.get("offset") || "0");
     const sortBy = searchParams.get("sort") || "recent";
     
     // Build the GitHub search query
@@ -61,10 +63,13 @@ export async function GET(request: NextRequest) {
     
     const github = new GitHubAPI(process.env.GITHUB_TOKEN);
     
+    // Calculate page from offset if offset is provided
+    const calculatedPage = offset > 0 ? Math.floor(offset / limit) + 1 : parseInt(page);
+    
     const result = await github.searchIssues(
       query,
-      parseInt(page),
-      30, // per_page
+      calculatedPage,
+      limit,
       sortParam,
       orderParam as "desc" | "asc"
     );
@@ -94,9 +99,32 @@ export async function GET(request: NextRequest) {
             label.name.includes("$") || label.name.toLowerCase().includes("bounty")
           );
           
-          const bountyAmount = bountyLabel?.name.match(/\$(\d+)/)?.[0] || 
-                              issue.body?.match(/bounty[:\s]*\$(\d+)/i)?.[0] ||
-                              issue.title?.match(/\$(\d+)/)?.[0];
+          // Extract just the dollar amount (number) from various patterns
+          let bountyAmount = null;
+          
+          // Try to extract from label name
+          if (bountyLabel?.name) {
+            const labelMatch = bountyLabel.name.match(/\$(\d+)/);
+            if (labelMatch) {
+              bountyAmount = `$${labelMatch[1]}`;
+            }
+          }
+          
+          // Try to extract from issue body if not found in label
+          if (!bountyAmount && issue.body) {
+            const bodyMatch = issue.body.match(/bounty[:\s]*\$(\d+)/i) || issue.body.match(/\$(\d+)/);
+            if (bodyMatch) {
+              bountyAmount = `$${bodyMatch[1]}`;
+            }
+          }
+          
+          // Try to extract from issue title if not found elsewhere
+          if (!bountyAmount && issue.title) {
+            const titleMatch = issue.title.match(/\$(\d+)/);
+            if (titleMatch) {
+              bountyAmount = `$${titleMatch[1]}`;
+            }
+          }
 
           return {
             id: issue.id,
@@ -137,8 +165,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       items: enhancedIssues,
       total_count: data.total_count,
-      page: parseInt(page),
-      has_more: data.total_count > parseInt(page) * 30
+      page: calculatedPage,
+      limit,
+      offset,
+      has_more: data.total_count > (offset + limit),
+      next_offset: offset + limit
     });
 
   } catch (error) {
