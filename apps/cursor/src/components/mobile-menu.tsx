@@ -113,17 +113,6 @@ export function MobileMenu() {
               >
                 {session?.user ? (
                   <>
-                    <Link
-                      href="/profile"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <Button
-                        variant="outline"
-                        className="h-8 rounded-full w-full mb-4 border-border"
-                      >
-                        Profile
-                      </Button>
-                    </Link>
                     <Button
                       variant="outline"
                       className="bg-white text-black h-8 rounded-full w-full"

@@ -4,7 +4,6 @@ import {
   jobs, 
   companies, 
   users, 
-  followers, 
   votes,
   mcps 
 } from "@/db/schema";
@@ -146,7 +145,6 @@ export async function updateUser(
     slug: string;
     socialXLink: string;
     public: boolean;
-    followEmail: boolean;
     status: string;
     hero: string;
   }>
@@ -160,70 +158,7 @@ export async function updateUser(
   return result[0];
 }
 
-// Follow actions
-export async function followUser(followerId: string, followingId: string) {
-  // Check if already following
-  const existing = await db
-    .select()
-    .from(followers)
-    .where(and(eq(followers.followerId, followerId), eq(followers.followingId, followingId)))
-    .limit(1);
-
-  if (existing.length > 0) {
-    throw new Error("Already following this user");
-  }
-
-  const result = await db
-    .insert(followers)
-    .values({
-      followerId,
-      followingId,
-    })
-    .returning();
-
-  // Update follower counts
-  await db
-    .update(users)
-    .set({
-      followerCount: sql`${users.followerCount} + 1`,
-    })
-    .where(eq(users.id, followingId));
-
-  await db
-    .update(users)
-    .set({
-      followingCount: sql`${users.followingCount} + 1`,
-    })
-    .where(eq(users.id, followerId));
-
-  return result[0];
-}
-
-export async function unfollowUser(followerId: string, followingId: string) {
-  const result = await db
-    .delete(followers)
-    .where(and(eq(followers.followerId, followerId), eq(followers.followingId, followingId)))
-    .returning();
-
-  if (result.length > 0) {
-    // Update follower counts
-    await db
-      .update(users)
-      .set({
-        followerCount: sql`${users.followerCount} - 1`,
-      })
-      .where(eq(users.id, followingId));
-
-    await db
-      .update(users)
-      .set({
-        followingCount: sql`${users.followingCount} - 1`,
-      })
-      .where(eq(users.id, followerId));
-  }
-
-  return result[0];
-}
+// Follow functionality removed - followUser and unfollowUser functions deleted
 
 // Vote actions
 export async function votePost(userId: string, postId: string) {

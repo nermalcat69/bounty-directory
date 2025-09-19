@@ -67,9 +67,6 @@ export function UserMenu() {
                 sideOffset={8}
               >
                 <DropdownMenuItem asChild>
-                  <Link href="/profile">Profile</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
                   <button
                     type="button"
                     onClick={() =>
@@ -120,9 +117,6 @@ export function UserMenu() {
               side="bottom"
               sideOffset={8}
             >
-              <DropdownMenuItem asChild>
-                <Link href="/profile">Profile</Link>
-              </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <button
                   type="button"

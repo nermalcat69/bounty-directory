@@ -169,8 +169,6 @@ export async function syncUserToMainTable(authUserId: string) {
         public: true, // Set to true so user appears in members page
         createdAt: new Date(),
         updatedAt: new Date(),
-        followerCount: 0,
-        followingCount: 0,
       });
 
       console.log("Created new user in main users table:", { id: newUserId, email: user.email, slug });

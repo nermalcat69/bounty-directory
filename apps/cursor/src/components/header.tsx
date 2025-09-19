@@ -1,23 +1,16 @@
 "use client";
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { ChevronDownIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, useState } from "react";
 import { CommandMenu } from "./command-menu";
 import { MobileMenu } from "./mobile-menu";
-import { Button } from "./ui/button";
 import { UserMenu } from "./user-menu";
 
 const navigationLinks = [
-  { href: "/rules", label: "Rules" },
+  { href: "/rules", label: "Bounties" },
+  { href: "/freelance", label: "Freelance" },
   { href: "/jobs", label: "Jobs" },
   { href: "/advertise", label: "Advertise" },
   { href: "/our-analytics", label: "Our Analytics" },
@@ -47,7 +40,7 @@ export function Header() {
                 "flex items-center gap-2 text-sm font-medium",
                 pathname.includes(link.href)
                   ? "text-primary"
-                  : "text-[#878787]",
+                  : "text-[#878787] hover:text-white",
               )}
             >
               {link.label}

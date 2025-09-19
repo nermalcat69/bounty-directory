@@ -31,7 +31,7 @@ export function HeroTitle({ totalUsers }: { totalUsers: number }) {
         <Link href="/mcp" className="border-b border-border border-dashed">
           MCPs
         </Link>
-        , post and follow the latest news on the board, learn, connect, and
+        , post the latest news on the board, learn, connect, and
         discover{" "}
         <Link href="/jobs" className="border-b border-border border-dashed">
           jobs

@@ -7,25 +7,21 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { authActionClient } from "./safe-action";
 
+// Follow functionality removed - update-settings action no longer needed
 export const updateSettingsAction = authActionClient
   .metadata({
     actionName: "update-settings",
   })
   .schema(
     z.object({
-      follow_email: z.boolean(),
+      // No settings to update since follow functionality is removed
     }),
   )
-  .action(async ({ parsedInput: { follow_email }, ctx: { userId } }) => {
-    const [updatedUser] = await db
-      .update(users)
-      .set({
-        followEmail: follow_email,
-      })
-      .where(eq(users.id, userId))
-      .returning({ id: users.id, slug: users.slug });
+  .action(async ({ ctx: { userId } }) => {
+    // Return user info without any updates
+    const [user] = await db
+      .select({ id: users.id, slug: users.slug })
+      .where(eq(users.id, userId));
 
-    // User profile settings removed - no need to revalidate
-
-    return updatedUser;
+    return user;
   });

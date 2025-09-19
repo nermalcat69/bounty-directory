@@ -36,13 +36,6 @@
       "when": 1758205498316,
       "tag": "0004_mixed_madame_masque",
       "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1758211133473,
-      "tag": "0005_cuddly_human_cannonball",
-      "breakpoints": true
     }
   ]
 }
