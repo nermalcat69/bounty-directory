@@ -79,30 +79,17 @@ export function BountyFilters({
           {languageOptions.map((option) => (
             <Button
               key={option.value}
-              variant={selectedLanguage === option.value ? "default" : "outline"}
+              variant="outline"
               size="sm"
               className={cn(
                 "rounded-full transition-all duration-200",
                 selectedLanguage === option.value 
-                  ? "bg-black text-white hover:bg-gray-700" 
-                  : "hover:bg-gray-700"
+                  ? "bg-neutral-900 text-white hover:bg-neutral-700" 
+                  : "hover:bg-neutral-900"
               )}
               onClick={() => onLanguageChange(option.value)}
             >
               <span>{option.name}</span>
-              {option.value === "all" && (
-                <Badge 
-                  variant="secondary" 
-                  className={cn(
-                    "ml-2 text-xs",
-                    selectedLanguage === option.value 
-                      ? "bg-white/20 text-white" 
-                      : "bg-gray-100"
-                  )}
-                >
-                  {totalBounties}
-                </Badge>
-              )}
             </Button>
           ))}
         </div>
