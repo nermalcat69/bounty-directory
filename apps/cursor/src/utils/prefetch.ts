@@ -35,7 +35,9 @@ class BountyPrefetcher {
     // Clean cache if too large
     if (this.cache.size >= this.maxCacheSize) {
       const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey);
+      }
     }
 
     // Start prefetch in background
