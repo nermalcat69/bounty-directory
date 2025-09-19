@@ -4,7 +4,7 @@ import { issues, notifications, alerts } from "@/db/schema";
 import { NotificationService } from "@/lib/notifications";
 import { eq } from "drizzle-orm";
 import { redis } from "@/lib/kv";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { updateBountyCacheForIssue } from "@/lib/redis-cache-updater";
 import crypto from "crypto";
 
@@ -124,12 +124,23 @@ async function handleIssueEvent(data: any) {
       console.error('Redis cache update failed:', cacheUpdateResult.errors);
     }
     
-    // Revalidate pages based on action
+    // Revalidate ISR pages and tags based on action
     if (action === "closed") {
+      // Issue closed - revalidate all bounty-related pages and tags
+      revalidateTag('bounties');
+      revalidateTag('bounty-list');
+      revalidateTag('total-bounty-amount');
+      revalidateTag('homepage');
       revalidatePath('/');
       revalidatePath('/bounties');
-    } else {
+      console.log('ISR revalidation triggered for closed bounty issue');
+    } else if (action === "opened" || action === "labeled" || action === "unlabeled" || action === "edited") {
+      // Issue opened/updated - revalidate totals and homepage
+      revalidateTag('total-bounty-amount');
+      revalidateTag('homepage');
+      revalidateTag('bounties');
       revalidatePath('/');
+      console.log(`ISR revalidation triggered for ${action} bounty issue`);
     }
   }
 

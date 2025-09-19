@@ -9,6 +9,7 @@ import type { BountyWithAmount } from "@/app/api/bounties/route";
 import { injectAdsIntoBounties, type BountyOrAd } from "@/lib/ad-utils";
 import type { Ad } from "@/data/ads";
 import { ads } from "@/data/ads";
+import { useBountyPrefetch } from "@/utils/prefetch";
 
 interface BountyListProps {
   selectedLanguage: string;
@@ -57,6 +58,9 @@ export function BountyList({ selectedLanguage, onTotalBountiesChange, selectedSo
   // Use ref to store the callback to avoid dependency issues
   const onTotalBountiesChangeRef = useRef(onTotalBountiesChange);
   onTotalBountiesChangeRef.current = onTotalBountiesChange;
+
+  // Use the optimized prefetching utility
+  const { prefetchNextPage } = useBountyPrefetch();
 
   const fetchBounties = useCallback(async (currentOffset: number, isLoadMore = false) => {
     if (isLoadMore) {
@@ -174,6 +178,19 @@ export function BountyList({ selectedLanguage, onTotalBountiesChange, selectedSo
           }
           
           onTotalBountiesChangeRef.current(totalCount);
+
+          // Prefetch next page for smoother scrolling (only on initial load)
+          if (hasMore && !isLoadMore) {
+            const nextPage = Math.floor(currentOffset / ITEMS_PER_LOAD) + 2;
+            const nextPageOptions = {
+              page: nextPage,
+              limit: ITEMS_PER_LOAD,
+              sort: selectedSort === "recent" ? "updated" : selectedSort === "least-attempts" ? "comments" : "updated",
+              order: selectedSort === "least-attempts" ? "asc" : "desc",
+              language: selectedLanguage !== "all" ? selectedLanguage : undefined,
+            };
+            prefetchNextPage(nextPageOptions);
+          }
         }
       }
     } catch (error) {
@@ -182,7 +199,7 @@ export function BountyList({ selectedLanguage, onTotalBountiesChange, selectedSo
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [selectedLanguage, selectedSort]);
+  }, [selectedLanguage, selectedSort, prefetchNextPage]);
 
   const loadMore = useCallback(() => {
     if (!loadingMore && hasMore) {

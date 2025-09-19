@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { GitHubAPI } from "@/lib/github";
 import { redis } from "@/lib/kv";
 import { parseBountyAmount, formatBountyAmount } from "@/utils/bounty-calculator";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 export async function GET() {
   try {
@@ -118,7 +118,9 @@ export async function GET() {
     
     await redis.setex("bounty:total", 86400, JSON.stringify(totalData));
     
-    // Revalidate the homepage to use fresh data
+    // Revalidate ISR pages and tags to use fresh data
+    revalidateTag('total-bounty-amount');
+    revalidateTag('homepage');
     revalidatePath('/');
     
     console.log(`Hourly total update complete: ${processed} bounties, total: ${formattedTotal}`);

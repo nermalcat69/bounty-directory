@@ -1,11 +1,11 @@
-import { Startpage } from "@/components/startpage";
+import { StartpageServer } from "@/components/startpage-server";
 import {
   getFeaturedJobs,
   getFeaturedMCPs,
   getPopularPosts,
   getTotalUsers,
 } from "@/data/queries";
-import { getTotalBountyAmount } from "@/data/bounty-queries";
+import { getTotalBountyAmountForISR } from "@/lib/server-bounty-fetcher";
 import { getPopularRules } from "@directories/data/popular";
 import type { Metadata } from "next";
 
@@ -15,9 +15,11 @@ export const metadata: Metadata = {
     "Enhance your Cursor with custom rules, find MCP servers, discover bounties, and join a community of Cursor enthusiasts.",
 };
 
-// Enable dynamic rendering to show updated bounty totals
-export const dynamic = "force-dynamic";
-export const revalidate = 0; // No caching - always fetch fresh data
+// Enable ISR with 5-minute revalidation for better performance
+export const revalidate = 300; // Revalidate every 5 minutes
+
+// Tags for on-demand revalidation
+export const tags = ['homepage', 'bounties', 'total-bounty-amount'];
 
 export default async function Page() {
   const popularRules = await getPopularRules();
@@ -59,14 +61,14 @@ export default async function Page() {
   })) || null;
 
   const { data: totalUsers } = await getTotalUsers();
-  const totalBountyAmount = await getTotalBountyAmount();
+  const totalBountyAmount = await getTotalBountyAmountForISR();
 
   const { data: popularPosts } = await getPopularPosts();
 
   return (
     <div className="flex justify-center min-h-screen w-full md:px-0 px-6 mt-[10%]">
       <div className="w-full max-w-6xl">
-        <Startpage
+        <StartpageServer
           sections={popularRules}
           jobs={featuredJobs}
           mcps={featuredMCPs}

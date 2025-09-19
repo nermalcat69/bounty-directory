@@ -101,7 +101,7 @@ export function BountyCard({ bounty, isPage }: { bounty: BountyWithAmount; isPag
               <span className="text-xs text-neutral-400 truncate overflow-hidden">{bounty.user_login}</span>
             </div>
             <span className="text-xs text-neutral-500">
-              {formatDate(bounty.updated_at instanceof Date ? bounty.updated_at.toISOString() : bounty.updated_at)}
+              {formatDate(bounty.updated_at)}
             </span>
           </div>
       </CardContent>

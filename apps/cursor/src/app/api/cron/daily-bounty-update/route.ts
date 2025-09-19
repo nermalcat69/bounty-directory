@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { GitHubAPI, extractLanguageFromRepository } from "@/lib/github";
 import { redis } from "@/lib/kv";
 import { parseBountyAmount, formatBountyAmount } from "@/utils/bounty-calculator";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { filterIssuesWithDollarLabels } from "@/utils/antiwork-filter";
 
 export async function GET() {
@@ -174,8 +174,13 @@ export async function GET() {
       count: processed
     }));
     
-    // Revalidate the homepage to use fresh data
+    // Revalidate all ISR pages and tags to use fresh data
+    revalidateTag('bounties');
+    revalidateTag('bounty-list');
+    revalidateTag('total-bounty-amount');
+    revalidateTag('homepage');
     revalidatePath('/');
+    revalidatePath('/bounties');
     
     console.log(`Daily bounty update complete: ${processed} bounties, total: ${formattedTotal}`);
     

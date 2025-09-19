@@ -44,7 +44,7 @@ export function HeroTitle({
           animation: "fadeIn 0.2s ease forwards 0.1s",
         }}
       >
-        The home for Cursor enthusiasts where you can explore rules, browse{" "}
+        The home for Open Source enthusiasts where you can find bounties, jobs,{" "}
         <Link href="/mcp" className="border-b border-border border-dashed">
           MCPs
         </Link>

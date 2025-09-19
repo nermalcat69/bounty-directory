@@ -38,7 +38,7 @@ export function UserMenu() {
 
   if (isPending) {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-4">
         <Skeleton className="size-6 rounded-none" />
       </div>
     );
