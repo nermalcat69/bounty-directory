@@ -7,6 +7,7 @@ import { BountyList } from "./bounty-list";
 export function BountiesSection() {
   const [selectedLanguage, setSelectedLanguage] = useState("all");
   const [totalBounties, setTotalBounties] = useState(0);
+  const [selectedSort, setSelectedSort] = useState("recent");
 
   return (
     <div className="w-full">
@@ -15,6 +16,8 @@ export function BountiesSection() {
         selectedLanguage={selectedLanguage}
         onLanguageChange={setSelectedLanguage}
         totalBounties={totalBounties}
+        selectedSort={selectedSort}
+        onSortChange={setSelectedSort}
       />
 
       {/* Main Content - Full Width */}
@@ -22,6 +25,7 @@ export function BountiesSection() {
         <BountyList
           selectedLanguage={selectedLanguage}
           onTotalBountiesChange={setTotalBounties}
+          selectedSort={selectedSort}
         />
       </div>
     </div>

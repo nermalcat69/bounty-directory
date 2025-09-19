@@ -10,11 +10,12 @@ import type { BountyIssue } from "@/app/api/bounties/route";
 interface BountyListProps {
   selectedLanguage: string;
   onTotalBountiesChange: (total: number) => void;
+  selectedSort: string;
 }
 
 const ITEMS_PER_PAGE = 12;
 
-export function BountyList({ selectedLanguage, onTotalBountiesChange }: BountyListProps) {
+export function BountyList({ selectedLanguage, onTotalBountiesChange, selectedSort }: BountyListProps) {
   const [bounties, setBounties] = useState<BountyIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -34,6 +35,10 @@ export function BountyList({ selectedLanguage, onTotalBountiesChange }: BountyLi
           params.append("language", selectedLanguage);
         }
 
+        if (selectedSort) {
+          params.append("sort", selectedSort);
+        }
+
         const response = await fetch(`/api/bounties?${params}`);
         
         if (response.ok) {
@@ -51,7 +56,7 @@ export function BountyList({ selectedLanguage, onTotalBountiesChange }: BountyLi
     };
 
     fetchBounties();
-  }, [selectedLanguage, currentPage, onTotalBountiesChange]);
+  }, [selectedLanguage, currentPage, selectedSort, onTotalBountiesChange]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);

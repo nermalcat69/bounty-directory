@@ -17,6 +17,7 @@ export interface BountyIssue {
   created_at: string;
   updated_at: string;
   state: string;
+  comments: number;
   repository: {
     name: string;
     full_name: string;
@@ -31,6 +32,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const language = searchParams.get("language");
     const page = searchParams.get("page") || "1";
+    const sortBy = searchParams.get("sort") || "recent";
     
     // Build the GitHub search query
     let query = 'label:"💎 Bounty" state:open';
@@ -38,7 +40,25 @@ export async function GET(request: NextRequest) {
       query += ` language:${language}`;
     }
     
-    const githubUrl = `https://api.github.com/search/issues?q=${encodeURIComponent(query)}&sort=updated&order=desc&page=${page}&per_page=30`;
+    // Determine sort parameters based on sortBy value
+    let sortParam = "updated";
+    let orderParam = "desc";
+    
+    switch (sortBy) {
+      case "recent":
+        sortParam = "updated";
+        orderParam = "desc";
+        break;
+      case "least-attempts":
+        sortParam = "comments";
+        orderParam = "asc";
+        break;
+      default:
+        sortParam = "updated";
+        orderParam = "desc";
+    }
+    
+    const githubUrl = `https://api.github.com/search/issues?q=${encodeURIComponent(query)}&sort=${sortParam}&order=${orderParam}&page=${page}&per_page=30`;
     
     const response = await fetch(githubUrl, {
       headers: {
@@ -95,6 +115,7 @@ export async function GET(request: NextRequest) {
             created_at: issue.created_at,
             updated_at: issue.updated_at,
             state: issue.state,
+            comments: issue.comments || 0,
             repository: {
               name: repoData?.name || issue.repository_url.split("/").pop(),
               full_name: repoData?.full_name || issue.repository_url.split("/").slice(-2).join("/"),
@@ -107,6 +128,7 @@ export async function GET(request: NextRequest) {
           console.error("Error enhancing issue:", error);
           return {
             ...issue,
+            comments: issue.comments || 0,
             repository: {
               name: issue.repository_url.split("/").pop(),
               full_name: issue.repository_url.split("/").slice(-2).join("/"),

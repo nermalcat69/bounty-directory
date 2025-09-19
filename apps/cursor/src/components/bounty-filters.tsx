@@ -2,7 +2,14 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Filter, ExternalLink } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -10,12 +17,16 @@ interface BountyFiltersProps {
   selectedLanguage: string;
   onLanguageChange: (language: string) => void;
   totalBounties: number;
+  selectedSort: string;
+  onSortChange: (sort: string) => void;
 }
 
 export function BountyFilters({ 
   selectedLanguage, 
   onLanguageChange, 
-  totalBounties 
+  totalBounties,
+  selectedSort,
+  onSortChange
 }: BountyFiltersProps) {
   const [languages, setLanguages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,7 +89,7 @@ export function BountyFilters({
       {/* Filter Labels */}
       <div className="space-y-3">
         
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
           {languageOptions.map((option) => (
             <Button
               key={option.value}
@@ -95,6 +106,19 @@ export function BountyFilters({
               <span>{option.name}</span>
             </Button>
           ))}
+          
+          {/* Sort Dropdown */}
+          <div className="ml-auto">
+            <Select value={selectedSort} onValueChange={onSortChange}>
+              <SelectTrigger className="w-[180px] space-x-1 flex rounded-full">
+                <SelectValue placeholder="Sort by..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recent">Recent</SelectItem>
+                <SelectItem value="least-attempts">Least Attempts</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
     </div>
