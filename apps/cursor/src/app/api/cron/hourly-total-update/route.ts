@@ -3,6 +3,7 @@ import { GitHubAPI } from "@/lib/github";
 import { redis } from "@/lib/kv";
 import { parseBountyAmount, formatBountyAmount } from "@/utils/bounty-calculator";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { isSpamIssue, logSpamUserFiltered } from "@/utils/spam-filter";
 
 export async function GET() {
   try {
@@ -33,6 +34,12 @@ export async function GET() {
         return;
       }
       seenIssues.add(issue.id);
+      
+      // Filter out spam users
+      if (isSpamIssue(issue)) {
+        logSpamUserFiltered(issue.user.login, issue.id);
+        return;
+      }
       
       processed++;
       

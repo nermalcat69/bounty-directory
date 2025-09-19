@@ -5,6 +5,7 @@ import { issues, alerts, notifications } from "@/db/schema";
 import { redis } from "./kv";
 import { GitHubAPI, extractRepoFromUrl, extractLanguageFromRepository, fetchAntiworkBounties, type GitHubIssue } from "./github";
 import { eq, and, sql } from "drizzle-orm";
+import { isSpamIssue, logSpamUserFiltered } from "@/utils/spam-filter";
 
 export class BountyFetcher {
   private github: GitHubAPI;
@@ -62,6 +63,12 @@ export class BountyFetcher {
             if (issueDate < cutoffDate) {
               console.log(`Issue ${issue.id} is too old, stopping...`);
               break;
+            }
+
+            // Filter out spam users
+            if (isSpamIssue(issue)) {
+              logSpamUserFiltered(issue.user.login, issue.id);
+              continue;
             }
 
             const repo = extractRepoFromUrl(issue.repository_url);
@@ -145,6 +152,12 @@ export class BountyFetcher {
         console.log(`Found ${antiworkIssues.length} antiwork bounties`);
         
         for (const issue of antiworkIssues) {
+          // Filter out spam users
+          if (isSpamIssue(issue)) {
+            logSpamUserFiltered(issue.user.login, issue.id);
+            continue;
+          }
+
           const existingIssue = await db.select().from(issues).where(eq(issues.id, issue.id.toString())).limit(1);
           
           if (existingIssue.length === 0) {

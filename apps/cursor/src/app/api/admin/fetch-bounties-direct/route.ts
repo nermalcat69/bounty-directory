@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { GitHubAPI, extractLanguageFromRepository } from "@/lib/github";
 import { redis } from "@/lib/kv";
 import { parseBountyAmount, formatBountyAmount } from "@/utils/bounty-calculator";
+import { isSpamIssue, logSpamUserFiltered } from "@/utils/spam-filter";
 
 export async function POST() {
   try {
@@ -31,6 +32,12 @@ export async function POST() {
         return;
       }
       seenIssues.add(issue.id);
+      
+      // Filter out spam users
+      if (isSpamIssue(issue)) {
+        logSpamUserFiltered(issue.user.login, issue.id);
+        return;
+      }
       
       processed++;
       
