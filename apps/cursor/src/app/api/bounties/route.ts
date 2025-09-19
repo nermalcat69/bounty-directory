@@ -94,35 +94,69 @@ export async function GET(request: NextRequest) {
           
           const repoData = repoResponse.ok ? await repoResponse.json() : null;
           
-          // Extract bounty amount from labels or body
-          const bountyLabel = issue.labels.find((label: any) => 
-            label.name.includes("$") || label.name.toLowerCase().includes("bounty")
-          );
-          
-          // Extract just the dollar amount (number) from various patterns
+          // Extract bounty amount from labels, body, or title
           let bountyAmount = null;
           
-          // Try to extract from label name
-          if (bountyLabel?.name) {
-            const labelMatch = bountyLabel.name.match(/\$(\d+)/);
-            if (labelMatch) {
-              bountyAmount = `$${labelMatch[1]}`;
+          // Try to extract from all labels (not just bounty-specific ones)
+          for (const label of issue.labels) {
+            const labelName = label.name.toLowerCase();
+            
+            // Look for various patterns in labels
+            const patterns = [
+              /\$(\d+)/,                    // $100
+              /(\d+)\s*usd/i,              // 100 USD
+              /(\d+)\s*dollars?/i,         // 100 dollar(s)
+              /bounty[:\s]*(\d+)/i,        // bounty: 100 or bounty 100
+              /reward[:\s]*(\d+)/i,        // reward: 100 or reward 100
+              /prize[:\s]*(\d+)/i          // prize: 100 or prize 100
+            ];
+            
+            for (const pattern of patterns) {
+              const match = label.name.match(pattern);
+              if (match) {
+                bountyAmount = `$${match[1]}`;
+                break;
+              }
             }
+            
+            if (bountyAmount) break;
           }
           
-          // Try to extract from issue body if not found in label
+          // Try to extract from issue body if not found in labels
           if (!bountyAmount && issue.body) {
-            const bodyMatch = issue.body.match(/bounty[:\s]*\$(\d+)/i) || issue.body.match(/\$(\d+)/);
-            if (bodyMatch) {
-              bountyAmount = `$${bodyMatch[1]}`;
+            const bodyPatterns = [
+              /bounty[:\s]*\$(\d+)/i,      // bounty: $100
+              /reward[:\s]*\$(\d+)/i,      // reward: $100
+              /prize[:\s]*\$(\d+)/i,       // prize: $100
+              /\$(\d+)\s*bounty/i,         // $100 bounty
+              /\$(\d+)\s*reward/i,         // $100 reward
+              /\$(\d+)/                    // $100 (standalone)
+            ];
+            
+            for (const pattern of bodyPatterns) {
+              const match = issue.body.match(pattern);
+              if (match) {
+                bountyAmount = `$${match[1]}`;
+                break;
+              }
             }
           }
           
           // Try to extract from issue title if not found elsewhere
           if (!bountyAmount && issue.title) {
-            const titleMatch = issue.title.match(/\$(\d+)/);
-            if (titleMatch) {
-              bountyAmount = `$${titleMatch[1]}`;
+            const titlePatterns = [
+              /\$(\d+)/,                   // $100
+              /bounty[:\s]*(\d+)/i,        // bounty: 100
+              /reward[:\s]*(\d+)/i,        // reward: 100
+              /(\d+)\s*usd/i               // 100 USD
+            ];
+            
+            for (const pattern of titlePatterns) {
+              const match = issue.title.match(pattern);
+              if (match) {
+                bountyAmount = `$${match[1]}`;
+                break;
+              }
             }
           }
 
