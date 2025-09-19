@@ -131,6 +131,9 @@ export function UserMenu() {
               <DropdownMenuItem asChild>
                 <Link href="/jobs/new">Post a job</Link>
               </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/alerts">Alerts</Link>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleSignOut}>
                 Sign out
               </DropdownMenuItem>

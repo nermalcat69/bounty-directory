@@ -108,6 +108,48 @@ export const avatars = pgTable("avatars", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Bounty Directory Tables
+export const issues = pgTable("issues", {
+  id: text("id").primaryKey(), // GitHub issue ID as string
+  repo: text("repo").notNull(),
+  number: integer("number").notNull(),
+  title: text("title"),
+  body: text("body"),
+  html_url: text("html_url"),
+  user_login: text("user_login"),
+  created_at: timestamp("created_at"),
+  updated_at: timestamp("updated_at"),
+  labels: text("labels"), // JSON string of labels
+  raw: text("raw"), // JSON string of raw GitHub data
+  first_seen: timestamp("first_seen").defaultNow(),
+  last_notified: timestamp("last_notified"),
+  comments: integer("comments").default(0),
+  state: text("state").default("open"),
+  assignee: text("assignee"),
+  language: text("language"),
+});
+
+export const alerts = pgTable("alerts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  user_id: text("user_id").references(() => users.id),
+  repo: text("repo"), // either a repo (owner/repo) OR null for global
+  query: text("query"), // search query for filtering
+  delivery_method: text("delivery_method").notNull(), // 'discord', 'webhook', 'email'
+  destination: text("destination").notNull(), // webhook URL or discord webhook or email
+  active: boolean("active").default(true),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+export const notifications = pgTable("notifications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  issue_id: text("issue_id").references(() => issues.id),
+  alert_id: uuid("alert_id").references(() => alerts.id),
+  sent_at: timestamp("sent_at").defaultNow(),
+  delivery_method: text("delivery_method").notNull(),
+  status: text("status").default("pending"), // 'pending', 'sent', 'failed'
+  error_message: text("error_message"),
+});
+
 // Better Auth tables
 export const verification = pgTable("verification", {
   id: text("id").primaryKey(),
@@ -165,6 +207,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   votes: many(votes),
   sessions: many(session),
   accounts: many(account),
+  alerts: many(alerts),
 }));
 
 export const companiesRelations = relations(companies, ({ one, many }) => ({
@@ -222,5 +265,28 @@ export const accountRelations = relations(account, ({ one }) => ({
   user: one(users, {
     fields: [account.userId],
     references: [users.id],
+  }),
+}));
+
+export const issuesRelations = relations(issues, ({ many }) => ({
+  notifications: many(notifications),
+}));
+
+export const alertsRelations = relations(alerts, ({ one, many }) => ({
+  user: one(users, {
+    fields: [alerts.user_id],
+    references: [users.id],
+  }),
+  notifications: many(notifications),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  issue: one(issues, {
+    fields: [notifications.issue_id],
+    references: [issues.id],
+  }),
+  alert: one(alerts, {
+    fields: [notifications.alert_id],
+    references: [alerts.id],
   }),
 }));

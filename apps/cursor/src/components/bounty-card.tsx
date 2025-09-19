@@ -22,24 +22,33 @@ export function BountyCard({ bounty, isPage }: { bounty: BountyIssue; isPage?: b
   };
 
   return (
-    <Card
-      className={cn(
-        "bg-background p-4 flex flex-col aspect-square max-h-[calc(100vh-8rem)]",
-      )}
+    <Link 
+      href={bounty.html_url} 
+      target="_blank" 
+      rel="noopener noreferrer"
+      className="block h-full"
     >
-      <CardContent
+      <Card
         className={cn(
-          "bg-card h-full mb-2 p-4 text-sm opacity-50 hover:opacity-100 transition-opacity group relative flex-grow flex flex-col",
-          isPage && "opacity-100",
+          "bg-background p-3 flex flex-col h-48 min-h-48 cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02]",
         )}
       >
-        <div className="group-hover:flex hidden right-4 top-4 absolute z-10">
-          <Link href={bounty.html_url} target="_blank" rel="noopener noreferrer">
-            <ExternalLink className="w-4 h-4 text-muted-foreground hover:text-foreground" />
-          </Link>
-        </div>
+        <CardContent
+          className={cn(
+            "bg-card p-3 text-sm opacity-50 hover:opacity-100 transition-opacity group relative flex flex-col",
+            isPage && "opacity-100",
+          )}
+        >
+          {/* Bounty amount - Absolute positioned in top right */}
+          {bounty.bounty_amount && (
+            <div className="absolute top-2 right-2 z-20">
+              <div className="bg-black dark:bg-black text-white px-2.5 py-1.5 rounded-full text-xs font-bold tracking-wide shadow-xl border border-gray-800 opacity-100">
+                {bounty.bounty_amount}
+              </div>
+            </div>
+          )}
 
-        <div className="flex-grow flex flex-col space-y-3">
+        <div className="flex flex-col space-y-3">
           {/* Header with repository info */}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 min-w-0">
@@ -56,46 +65,12 @@ export function BountyCard({ bounty, isPage }: { bounty: BountyIssue; isPage?: b
             )}
           </div>
 
-          {/* Bounty amount */}
-          {bounty.bounty_amount && (
-            <div className="flex justify-center">
-              <Badge variant="secondary" className="bg-green-100 text-green-800 font-semibold">
-                {bounty.bounty_amount}
-              </Badge>
-            </div>
-          )}
-
           {/* Title */}
           <h3 className="font-semibold text-foreground text-sm leading-tight">
             {truncateText(bounty.title, 80)}
           </h3>
 
-          {/* Description */}
-          <p className="text-xs text-muted-foreground flex-grow overflow-hidden">
-            {truncateText(bounty.body || "No description available", 120)}
-          </p>
 
-          {/* Labels */}
-          <div className="flex flex-wrap gap-1">
-            {bounty.labels.slice(0, 3).map((label) => (
-              <Badge
-                key={label.name}
-                variant="outline"
-                className="text-xs px-1 py-0"
-                style={{
-                  borderColor: `#${label.color}`,
-                  color: `#${label.color}`,
-                }}
-              >
-                {label.name}
-              </Badge>
-            ))}
-            {bounty.labels.length > 3 && (
-              <Badge variant="outline" className="text-xs px-1 py-0">
-                +{bounty.labels.length - 3}
-              </Badge>
-            )}
-          </div>
 
           {/* Language */}
           {bounty.repository.language && (
@@ -125,6 +100,7 @@ export function BountyCard({ bounty, isPage }: { bounty: BountyIssue; isPage?: b
         </div>
       </CardContent>
     </Card>
+    </Link>
   );
 }
 

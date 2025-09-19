@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { GitHubAPI } from "@/lib/github";
 
 export interface BountyIssue {
   id: number;
@@ -58,24 +59,17 @@ export async function GET(request: NextRequest) {
         orderParam = "desc";
     }
     
-    const githubUrl = `https://api.github.com/search/issues?q=${encodeURIComponent(query)}&sort=${sortParam}&order=${orderParam}&page=${page}&per_page=30`;
+    const github = new GitHubAPI(process.env.GITHUB_TOKEN);
     
-    const response = await fetch(githubUrl, {
-      headers: {
-        "Accept": "application/vnd.github.v3+json",
-        "User-Agent": "Cursor-Directory-App",
-        ...(process.env.GITHUB_TOKEN && {
-          "Authorization": `token ${process.env.GITHUB_TOKEN}`
-        })
-      },
-      next: { revalidate: 300 } // Cache for 5 minutes
-    });
+    const result = await github.searchIssues(
+      query,
+      parseInt(page),
+      30, // per_page
+      sortParam,
+      orderParam as "desc" | "asc"
+    );
 
-    if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.status}`);
-    }
-
-    const data = await response.json();
+    const data = result.data;
     
     // Enhance the issues with repository information
     const enhancedIssues = await Promise.all(
@@ -141,7 +135,7 @@ export async function GET(request: NextRequest) {
     );
 
     return NextResponse.json({
-      issues: enhancedIssues,
+      items: enhancedIssues,
       total_count: data.total_count,
       page: parseInt(page),
       has_more: data.total_count > parseInt(page) * 30
@@ -159,24 +153,15 @@ export async function GET(request: NextRequest) {
 // Get available languages from bounty issues
 export async function POST() {
   try {
-    const githubUrl = `https://api.github.com/search/issues?q=${encodeURIComponent('label:"💎 Bounty" state:open')}&per_page=100`;
+    const github = new GitHubAPI(process.env.GITHUB_TOKEN);
     
-    const response = await fetch(githubUrl, {
-      headers: {
-        "Accept": "application/vnd.github.v3+json",
-        "User-Agent": "Cursor-Directory-App",
-        ...(process.env.GITHUB_TOKEN && {
-          "Authorization": `token ${process.env.GITHUB_TOKEN}`
-        })
-      },
-      next: { revalidate: 3600 } // Cache for 1 hour
-    });
+    const result = await github.searchIssues(
+      'label:"💎 Bounty" state:open',
+      1,
+      100 // per_page
+    );
 
-    if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.status}`);
-    }
-
-    const data = await response.json();
+    const data = result.data;
     
     // Extract unique languages from repositories
     const languages = new Set<string>();
