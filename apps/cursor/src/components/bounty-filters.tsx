@@ -54,8 +54,11 @@ export function BountyFilters({
           <div className="flex items-center gap-2 mb-1">
             <h2 className="font-semibold text-lg">Filter Bounties</h2>
           </div>
-          <p className="text-sm text-gray-600">
-            {totalBounties} bounties available across {languages.length} languages
+          <p className="text-sm text-neutral-500">
+            {selectedLanguage === "all" 
+              ? `${totalBounties} bounties available across ${languages.length} languages`
+              : `${totalBounties} bounties available in ${selectedLanguage}`
+            }
           </p>
         </div>
         
