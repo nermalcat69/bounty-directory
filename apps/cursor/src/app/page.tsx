@@ -9,12 +9,13 @@ import { getPopularRules } from "@directories/data/popular";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Cursor Directory - Cursor Rules & MCP Servers",
+  title: "Cursor Directory - Cursor Rules, MCPs & Bounties",
   description:
-    "Enhance your Cursor with custom rules, find MCP servers, and join a community of Cursor enthusiasts.",
+    "Enhance your Cursor with custom rules, find MCP servers, discover bounties, and join a community of Cursor enthusiasts.",
 };
 
-// Add force-static and revalidate configuration
+// This forces the page to be statically generated at build time
+// Remove this if you want the page to be server-side rendered on each request
 export const dynamic = "force-static";
 export const revalidate = 86400; // Revalidate once every day
 

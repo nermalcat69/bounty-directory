@@ -10,6 +10,8 @@ import { HeroTitle } from "./hero-title";
 import { type Job, JobsFeatured } from "./jobs/jobs-featured";
 import MCPList from "./mcp-list";
 import type { MCP } from "./mcps/mcps-featured";
+import { BountiesFeatured } from "./bounties/bounties-featured";
+import { BountiesSection } from "./bounties-section";
 
 import { RuleList } from "./rule-list";
 import { Cursor } from "./ui/cursor";
@@ -53,128 +55,8 @@ export function Startpage({
             <GlobalSearchInput />
           </div>
 
-          <motion.div
-            className="mb-10"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }}
-          >
-            <MCPList data={mcps} />
-          </motion.div>
-
-          {!search && (
-            <motion.div
-              className="mb-10"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }}
-            >
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-regular">Featured jobs</h3>
-                <Link
-                  href="/jobs"
-                  className="text-sm text-[#878787] flex items-center gap-1"
-                >
-                  <span>View all</span>
-                  <svg
-                    width="12"
-                    height="13"
-                    viewBox="0 0 12 13"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <mask
-                      id="mask0_106_981"
-                      maskUnits="userSpaceOnUse"
-                      x="0"
-                      y="0"
-                      width="12"
-                      height="13"
-                    >
-                      <rect y="0.5" width="12" height="12" fill="#D9D9D9" />
-                    </mask>
-                    <g mask="url(#mask0_106_981)">
-                      <path
-                        d="M3.2 9.5L2.5 8.8L7.3 4H3V3H9V9H8V4.7L3.2 9.5Z"
-                        fill="#878787"
-                      />
-                    </g>
-                  </svg>
-                </Link>
-              </div>
-              <JobsFeatured data={jobs} hidePagination={true} />
-
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: "easeOut", delay: 0.45 }}
-                className="mt-10"
-              >
-                <RuleList
-                  sections={[
-                    {
-                      ...sectionsPartOne,
-                      rules: sectionsPartOne.rules.slice(0, 14),
-                    },
-                  ]}
-                  small
-                  showViewAll
-                />
-              </motion.div>
-
-
-
-              <div className="flex justify-between items-center mb-4 mt-10">
-                <Link href="/board">
-                  <h3 className="text-base font-regular">Trending in Cursor</h3>
-                </Link>
-                <Link
-                  href="/board"
-                  className="text-sm text-[#878787] flex items-center gap-1"
-                >
-                  <span>View all</span>
-                  <svg
-                    width="12"
-                    height="13"
-                    viewBox="0 0 12 13"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <mask
-                      id="mask0_106_981"
-                      maskUnits="userSpaceOnUse"
-                      x="0"
-                      y="0"
-                      width="12"
-                      height="13"
-                    >
-                      <rect y="0.5" width="12" height="12" fill="#D9D9D9" />
-                    </mask>
-                    <g mask="url(#mask0_106_981)">
-                      <path
-                        d="M3.2 9.5L2.5 8.8L7.3 4H3V3H9V9H8V4.7L3.2 9.5Z"
-                        fill="#878787"
-                      />
-                    </g>
-                  </svg>
-                </Link>
-              </div>
-              <div className="space-y-10">
-                {popularPosts?.slice(0, 3).map((post) => (
-                  // @ts-ignore
-                  <BoardPost key={post.post_id} {...post} />
-                ))}
-              </div>
-            </motion.div>
-          )}
-
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut", delay: 0.45 }}
-          >
-            <RuleList sections={restSections} small showViewAll />
-          </motion.div>
+          {/* Bounties Section with Sidebar and Main View */}
+          <BountiesSection />
         </div>
       </div>
     </div>
