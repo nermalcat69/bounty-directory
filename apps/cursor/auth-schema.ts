@@ -17,17 +17,6 @@ export const user = pgTable("auth_user", {
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
-  slug: text("slug"),
-  hero: text("hero"),
-  status: text("status"),
-  bio: text("bio"),
-  work: text("work"),
-  website: text("website"),
-  socialXLink: text("social_x_link"),
-  public: boolean("public"),
-  followEmail: boolean("follow_email"),
-  followerCount: integer("follower_count"),
-  followingCount: integer("following_count"),
 });
 
 export const session = pgTable("auth_session", {

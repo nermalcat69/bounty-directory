@@ -5,6 +5,7 @@ import {
   getPopularPosts,
   getTotalUsers,
 } from "@/data/queries";
+import { getTotalBountyAmount } from "@/data/bounty-queries";
 import { getPopularRules } from "@directories/data/popular";
 import type { Metadata } from "next";
 
@@ -14,10 +15,9 @@ export const metadata: Metadata = {
     "Enhance your Cursor with custom rules, find MCP servers, discover bounties, and join a community of Cursor enthusiasts.",
 };
 
-// This forces the page to be statically generated at build time
-// Remove this if you want the page to be server-side rendered on each request
-export const dynamic = "force-static";
-export const revalidate = 86400; // Revalidate once every day
+// Enable dynamic rendering to show updated bounty totals
+export const dynamic = "force-dynamic";
+export const revalidate = 0; // No caching - always fetch fresh data
 
 export default async function Page() {
   const popularRules = await getPopularRules();
@@ -59,6 +59,7 @@ export default async function Page() {
   })) || null;
 
   const { data: totalUsers } = await getTotalUsers();
+  const totalBountyAmount = await getTotalBountyAmount();
 
   const { data: popularPosts } = await getPopularPosts();
 
@@ -70,6 +71,7 @@ export default async function Page() {
           jobs={featuredJobs}
           mcps={featuredMCPs}
           totalUsers={totalUsers?.count ?? 0}
+          totalBountyAmount={totalBountyAmount}
           members={null}
           popularPosts={popularPosts}
         />

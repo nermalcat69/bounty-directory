@@ -3,7 +3,7 @@ import "server-only";
 import { db } from "@/db";
 import { issues, alerts, notifications } from "@/db/schema";
 import { redis } from "./kv";
-import { GitHubAPI, extractRepoFromUrl, extractLanguageFromLabels, type GitHubIssue } from "./github";
+import { GitHubAPI, extractRepoFromUrl, extractLanguageFromRepository, type GitHubIssue } from "./github";
 import { eq, and, sql } from "drizzle-orm";
 
 export class BountyFetcher {
@@ -65,7 +65,7 @@ export class BountyFetcher {
             }
 
             const repo = extractRepoFromUrl(issue.repository_url);
-            const language = extractLanguageFromLabels(issue.labels);
+            const language = await extractLanguageFromRepository(this.github, issue.repository_url);
 
             // Upsert issue
             const existingIssue = await db

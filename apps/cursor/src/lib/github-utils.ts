@@ -8,17 +8,8 @@
  * @returns GitHub username or null if not found
  */
 export function extractGitHubUsername(user: {
-  website?: string | null;
   image?: string | null;
-  socialXLink?: string | null;
 }): string | null {
-  // Check website URL for GitHub profile
-  if (user.website) {
-    const githubMatch = user.website.match(/github\.com\/([^\/\?#]+)/i);
-    if (githubMatch && githubMatch[1]) {
-      return githubMatch[1];
-    }
-  }
 
   // Check image URL for GitHub avatar
   if (user.image) {

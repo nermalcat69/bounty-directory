@@ -3,12 +3,18 @@
 import { formatNumber } from "@/utils/format";
 import Link from "next/link";
 
-export function HeroTitle({ totalUsers }: { totalUsers: number }) {
-  const text = `Join the Cursor community with ${formatNumber(totalUsers)}+ members`;
+export function HeroTitle({ 
+  totalUsers, 
+  totalBountyAmount 
+}: { 
+  totalUsers: number;
+  totalBountyAmount?: string;
+}) {
+  const text = `Join the Bounty community with ${formatNumber(totalUsers)}+ members`;
+  const bountyText = totalBountyAmount ? `${totalBountyAmount} in rewards in open source contributions` : '';
 
   return (
     <div className="text-center mb-8">
-      <Link href="/login">
         <h1
           className="text-[21px] mb-2"
           style={{
@@ -18,7 +24,18 @@ export function HeroTitle({ totalUsers }: { totalUsers: number }) {
         >
           {text}
         </h1>
-      </Link>
+        
+        {bountyText && (
+          <h2
+            className="text-[18px] mb-4 text-green-400 font-medium"
+            style={{
+              opacity: 0,
+              animation: "fadeIn 0.2s ease forwards 0.05s",
+            }}
+          >
+            {bountyText}
+          </h2>
+        )}
 
       <p
         className="text-[#878787] text-sm max-w-[620px] mx-auto"

@@ -18,15 +18,7 @@ export async function getUserProfile(userId: string) {
       name: users.name,
       email: users.email,
       image: users.image,
-      hero: users.hero,
-      status: users.status,
-      bio: users.bio,
-      work: users.work,
-      website: users.website,
-      slug: users.slug,
-      socialXLink: users.socialXLink,
       createdAt: users.createdAt,
-      public: users.public,
     })
     .from(users)
     .where(eq(users.id, userId))
@@ -70,7 +62,6 @@ export async function getPopularPosts() {
         id: users.id,
         name: users.name,
         image: users.image,
-        slug: users.slug,
       },
     })
     .from(posts)

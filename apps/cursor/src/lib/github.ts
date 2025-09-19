@@ -152,8 +152,18 @@ export class GitHubAPI {
   }
 
   async getIssue(owner: string, repo: string, issueNumber: number): Promise<GitHubIssue> {
-    const { data } = await this.request<GitHubIssue>(`/repos/${owner}/${repo}/issues/${issueNumber}`);
-    return data;
+    const response = await this.request<GitHubIssue>(`/repos/${owner}/${repo}/issues/${issueNumber}`);
+    return response.data;
+  }
+
+  async getRepositoryLanguage(owner: string, repo: string): Promise<string | null> {
+    try {
+      const response = await this.request<{ language: string | null }>(`/repos/${owner}/${repo}`);
+      return response.data.language;
+    } catch (error) {
+      console.error(`Error fetching repository language for ${owner}/${repo}:`, error);
+      return null;
+    }
   }
 }
 
@@ -163,22 +173,25 @@ export function extractRepoFromUrl(repositoryUrl: string): string {
   return match ? match[1] : "";
 }
 
-export function extractLanguageFromLabels(labels: Array<{ name: string }>): string | null {
-  // Common programming language labels
-  const languageLabels = [
-    "javascript", "typescript", "python", "java", "go", "rust", "c++", "c#",
-    "php", "ruby", "swift", "kotlin", "dart", "scala", "clojure", "elixir",
-    "haskell", "lua", "perl", "r", "shell", "bash", "powershell"
-  ];
-
-  for (const label of labels) {
-    const labelName = label.name.toLowerCase();
-    for (const lang of languageLabels) {
-      if (labelName.includes(lang)) {
-        return lang;
-      }
+export async function extractLanguageFromRepository(github: GitHubAPI, repositoryUrl: string): Promise<string | null> {
+  try {
+    const repo = extractRepoFromUrl(repositoryUrl);
+    const [owner, repoName] = repo.split('/');
+    
+    if (!owner || !repoName) {
+      return null;
     }
-  }
 
+    const language = await github.getRepositoryLanguage(owner, repoName);
+    return language;
+  } catch (error) {
+    console.error(`Error extracting language from repository ${repositoryUrl}:`, error);
+    return null;
+  }
+}
+
+// Keep the old function for backward compatibility but mark it as deprecated
+export function extractLanguageFromLabels(labels: Array<{ name: string }>): string | null {
+  // This function is deprecated - use extractLanguageFromRepository instead
   return null;
 }

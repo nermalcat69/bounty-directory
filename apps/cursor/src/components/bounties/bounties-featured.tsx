@@ -3,24 +3,26 @@
 import { useEffect, useState } from "react";
 import { BountyCard } from "../bounty-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { BountyIssue } from "@/app/api/bounties/route";
+import type { BountyWithAmount } from "@/app/api/bounties/route";
 
 interface BountiesFeaturedProps {
   hidePagination?: boolean;
 }
 
 export function BountiesFeatured({ hidePagination = false }: BountiesFeaturedProps) {
-  const [bounties, setBounties] = useState<BountyIssue[]>([]);
+  const [bounties, setBounties] = useState<BountyWithAmount[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchFeaturedBounties = async () => {
       try {
-        const response = await fetch("/api/bounties?page=1&per_page=6");
+        const response = await fetch("/api/bounties?mode=list&page=1&limit=6&sort=updated&order=desc");
         
         if (response.ok) {
           const data = await response.json();
-          setBounties(data.items || []);
+          if (data.success && data.data?.bounties) {
+            setBounties(data.data.bounties);
+          }
         }
       } catch (error) {
         console.error("Error fetching featured bounties:", error);

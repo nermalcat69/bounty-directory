@@ -3,6 +3,9 @@ import { db } from "@/db";
 import { issues, notifications, alerts } from "@/db/schema";
 import { NotificationService } from "@/lib/notifications";
 import { eq } from "drizzle-orm";
+import { redis } from "@/lib/kv";
+import { revalidatePath } from "next/cache";
+import { updateBountyCacheForIssue } from "@/lib/redis-cache-updater";
 import crypto from "crypto";
 
 // Verify GitHub webhook signature
@@ -59,10 +62,17 @@ export async function POST(request: NextRequest) {
 async function handleIssueEvent(data: any) {
   const { action, issue, repository } = data;
   
-  // Only process opened, edited, labeled, or unlabeled issues
-  if (!["opened", "edited", "labeled", "unlabeled"].includes(action)) {
+  // Only process opened, edited, labeled, unlabeled, or closed issues
+  if (!["opened", "edited", "labeled", "unlabeled", "closed", "reopened"].includes(action)) {
     return;
   }
+  
+  // Check if this is a bounty issue
+  const isBountyIssue = issue.labels?.some((label: any) => 
+    label.name.includes('💎 Bounty') || 
+    label.name.includes('$') ||
+    /bounty|reward|prize/i.test(label.name)
+  );
 
   const issueData = {
     id: issue.id.toString(),
@@ -100,6 +110,28 @@ async function handleIssueEvent(data: any) {
         language: issueData.language,
       },
     });
+
+  // Handle Redis cache updates for bounty issues
+  if (isBountyIssue) {
+    console.log(`Bounty issue ${action}: ${issue.html_url}`);
+    
+    // Update Redis cache intelligently
+    const cacheUpdateResult = await updateBountyCacheForIssue(issue, action);
+    
+    if (cacheUpdateResult.success) {
+      console.log('Redis cache updated successfully:', cacheUpdateResult.updated);
+    } else {
+      console.error('Redis cache update failed:', cacheUpdateResult.errors);
+    }
+    
+    // Revalidate pages based on action
+    if (action === "closed") {
+      revalidatePath('/');
+      revalidatePath('/bounties');
+    } else {
+      revalidatePath('/');
+    }
+  }
 
   // If this is a new issue or significant update, process notifications
   if (action === "opened" || action === "labeled") {

@@ -1,271 +1,362 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GitHubAPI } from "@/lib/github";
+import { redis } from "@/lib/kv";
+import { parseBountyAmount, formatBountyAmount } from "@/utils/bounty-calculator";
 
-export interface BountyIssue {
-  id: number;
+interface BountyItem {
+  id: string;
+  repo: string;
+  number: number;
   title: string;
   body: string;
   html_url: string;
-  repository_url: string;
-  labels: Array<{
-    name: string;
-    color: string;
-  }>;
-  user: {
-    login: string;
-    avatar_url: string;
-  };
-  created_at: string;
-  updated_at: string;
-  state: string;
+  user_login: string;
+  created_at: Date;
+  updated_at: Date;
+  labels: string;
   comments: number;
-  repository: {
-    name: string;
-    full_name: string;
-    language: string | null;
-    stargazers_count: number;
+  state: string;
+  assignee: string | null;
+  language: string | null;
+}
+
+export interface BountyWithAmount extends BountyItem {
+  amount: string | null;
+  parsedAmount: number;
+}
+
+interface BountyResponse {
+  success: boolean;
+  data: {
+    total: {
+      count: number;
+      amount: number;
+      formatted: string;
+    };
+    bounties?: BountyWithAmount[];
+    pagination?: {
+      page: number;
+      limit: number;
+      hasMore: boolean;
+      totalPages: number;
+    };
   };
-  bounty_amount?: string;
+  cached: boolean;
+  timestamp: string;
 }
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const language = searchParams.get("language");
-    const page = searchParams.get("page") || "1";
-    const limit = parseInt(searchParams.get("limit") || "30");
-    const offset = parseInt(searchParams.get("offset") || "0");
-    const sortBy = searchParams.get("sort") || "recent";
-    
-    // Build the GitHub search query
-    let query = 'label:"💎 Bounty" state:open';
-    if (language && language !== "all") {
-      query += ` language:${language}`;
-    }
-    
-    // Determine sort parameters based on sortBy value
-    let sortParam = "updated";
-    let orderParam = "desc";
-    
-    switch (sortBy) {
-      case "recent":
-        sortParam = "updated";
-        orderParam = "desc";
-        break;
-      case "least-attempts":
-        sortParam = "comments";
-        orderParam = "asc";
-        break;
-      default:
-        sortParam = "updated";
-        orderParam = "desc";
-    }
-    
-    const github = new GitHubAPI(process.env.GITHUB_TOKEN);
-    
-    // Calculate page from offset if offset is provided
-    const calculatedPage = offset > 0 ? Math.floor(offset / limit) + 1 : parseInt(page);
-    
-    const result = await github.searchIssues(
-      query,
-      calculatedPage,
-      limit,
-      sortParam,
-      orderParam as "desc" | "asc"
-    );
+    const mode = searchParams.get('mode') || 'total'; // 'total', 'list', or 'both'
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const sortBy = searchParams.get('sort') || 'amount'; // 'amount', 'created', 'updated'
+    const order = searchParams.get('order') || 'desc'; // 'asc' or 'desc'
+    const language = searchParams.get('language'); // language filter
+    const force = searchParams.get('force') === 'true'; // force refresh cache
 
-    const data = result.data;
-    
-    // Enhance the issues with repository information
-    const enhancedIssues = await Promise.all(
-      data.items.map(async (issue: any) => {
-        try {
-          // Extract repository info from repository_url
-          const repoResponse = await fetch(issue.repository_url, {
-            headers: {
-              "Accept": "application/vnd.github.v3+json",
-              "User-Agent": "Cursor-Directory-App",
-              ...(process.env.GITHUB_TOKEN && {
-                "Authorization": `token ${process.env.GITHUB_TOKEN}`
-              })
-            },
-            next: { revalidate: 3600 } // Cache repo info for 1 hour
-          });
-          
-          const repoData = repoResponse.ok ? await repoResponse.json() : null;
-          
-          // Extract bounty amount from labels, body, or title
-          let bountyAmount = null;
-          
-          // Try to extract from all labels (not just bounty-specific ones)
-          for (const label of issue.labels) {
-            const labelName = label.name.toLowerCase();
-            
-            // Look for various patterns in labels
-            const patterns = [
-              /\$(\d+)/,                    // $100
-              /(\d+)\s*usd/i,              // 100 USD
-              /(\d+)\s*dollars?/i,         // 100 dollar(s)
-              /bounty[:\s]*(\d+)/i,        // bounty: 100 or bounty 100
-              /reward[:\s]*(\d+)/i,        // reward: 100 or reward 100
-              /prize[:\s]*(\d+)/i          // prize: 100 or prize 100
-            ];
-            
-            for (const pattern of patterns) {
-              const match = label.name.match(pattern);
-              if (match) {
-                bountyAmount = `$${match[1]}`;
-                break;
-              }
-            }
-            
-            if (bountyAmount) break;
-          }
-          
-          // Try to extract from issue body if not found in labels
-          if (!bountyAmount && issue.body) {
-            const bodyPatterns = [
-              /bounty[:\s]*\$(\d+)/i,      // bounty: $100
-              /reward[:\s]*\$(\d+)/i,      // reward: $100
-              /prize[:\s]*\$(\d+)/i,       // prize: $100
-              /\$(\d+)\s*bounty/i,         // $100 bounty
-              /\$(\d+)\s*reward/i,         // $100 reward
-              /\$(\d+)/                    // $100 (standalone)
-            ];
-            
-            for (const pattern of bodyPatterns) {
-              const match = issue.body.match(pattern);
-              if (match) {
-                bountyAmount = `$${match[1]}`;
-                break;
-              }
-            }
-          }
-          
-          // Try to extract from issue title if not found elsewhere
-          if (!bountyAmount && issue.title) {
-            const titlePatterns = [
-              /\$(\d+)/,                   // $100
-              /bounty[:\s]*(\d+)/i,        // bounty: 100
-              /reward[:\s]*(\d+)/i,        // reward: 100
-              /(\d+)\s*usd/i               // 100 USD
-            ];
-            
-            for (const pattern of titlePatterns) {
-              const match = issue.title.match(pattern);
-              if (match) {
-                bountyAmount = `$${match[1]}`;
-                break;
-              }
-            }
-          }
+    // Check if we have cached totals (only skip if force refresh AND requesting total mode)
+    const skipTotalCache = force && mode === 'total';
+    const cachedTotalData = skipTotalCache ? null : await redis.get("bounty:total");
+    let totalData = null;
+    let isCachedTotal = false;
 
-          return {
-            id: issue.id,
-            title: issue.title,
-            body: issue.body || "",
-            html_url: issue.html_url,
-            repository_url: issue.repository_url,
-            labels: issue.labels,
-            user: issue.user,
-            created_at: issue.created_at,
-            updated_at: issue.updated_at,
-            state: issue.state,
-            comments: issue.comments || 0,
-            repository: {
-              name: repoData?.name || issue.repository_url.split("/").pop(),
-              full_name: repoData?.full_name || issue.repository_url.split("/").slice(-2).join("/"),
-              language: repoData?.language,
-              stargazers_count: repoData?.stargazers_count || 0
-            },
-            bounty_amount: bountyAmount
+    if (cachedTotalData && !skipTotalCache) {
+      try {
+        const rawTotalData = JSON.parse(cachedTotalData);
+        const cacheAge = Date.now() - new Date(rawTotalData.lastUpdated).getTime();
+        const isValid = cacheAge < 24 * 60 * 60 * 1000; // 24 hours
+        
+        if (isValid) {
+          // Normalize the data format (handle both old and new formats)
+          totalData = {
+            count: rawTotalData.count || 0,
+            amount: rawTotalData.amount || 0,
+            formatted: rawTotalData.formatted || "$0",
+            lastUpdated: rawTotalData.lastUpdated
           };
-        } catch (error) {
-          console.error("Error enhancing issue:", error);
-          return {
-            ...issue,
-            comments: issue.comments || 0,
-            repository: {
-              name: issue.repository_url.split("/").pop(),
-              full_name: issue.repository_url.split("/").slice(-2).join("/"),
-              language: null,
-              stargazers_count: 0
-            }
-          };
+          isCachedTotal = true;
+        } else {
+          totalData = null;
         }
-      })
-    );
+      } catch (e) {
+        console.error("Error parsing cached total data:", e);
+        totalData = null;
+      }
+    }
 
-    return NextResponse.json({
-      items: enhancedIssues,
-      total_count: data.total_count,
-      page: calculatedPage,
-      limit,
-      offset,
-      has_more: data.total_count > (offset + limit),
-      next_offset: offset + limit
+    // Get bounties from cache (skip if force refresh)
+    const cachedBounties = force ? null : await redis.get("snapshots:latest");
+    let allBounties: BountyItem[] = [];
+    let isCachedBounties = false;
+
+    if (cachedBounties && !force) {
+      try {
+        allBounties = JSON.parse(cachedBounties);
+        isCachedBounties = true;
+      } catch (e) {
+        allBounties = [];
+      }
+    }
+
+    // Process bounties with amounts
+    const bountiesWithAmounts: BountyWithAmount[] = allBounties.map(bounty => {
+      let bountyAmount: string | null = null;
+      let parsedAmount = 0;
+
+      try {
+        const labels = JSON.parse(bounty.labels || '[]');
+        
+        for (const labelName of labels) {
+          // Enhanced pattern matching for various bounty formats
+          const priorityPatterns = [
+            /\$(\d+(?:\.\d+)?[km]?)/i,    // $100, $2k, $1.5m
+            /(\d+(?:\.\d+)?[km]?)\s*usd/i, // 100 USD, 2k USD
+            /(\d+(?:\.\d+)?[km]?)\s*dollars?/i, // 100 dollar(s)
+            /bounty[:\s]*\$?(\d+(?:\.\d+)?[km]?)/i, // bounty: $100
+            /reward[:\s]*\$?(\d+(?:\.\d+)?[km]?)/i, // reward: $100
+            /prize[:\s]*\$?(\d+(?:\.\d+)?[km]?)/i   // prize: $100
+          ];
+
+          for (const pattern of priorityPatterns) {
+            const match = labelName.match(pattern);
+            if (match) {
+              bountyAmount = `$${match[1]}`;
+              break;
+            }
+          }
+
+          if (!bountyAmount) {
+            const numberMatch = labelName.match(/(\d+(?:\.\d+)?[km]?)/i);
+            if (numberMatch) {
+              const value = numberMatch[1].toLowerCase();
+              const numericPart = parseFloat(value.replace(/[km]/i, ''));
+              const hasK = value.includes('k');
+              const hasM = value.includes('m');
+              
+              let baseNumber = numericPart;
+              if (hasK) baseNumber *= 1000;
+              if (hasM) baseNumber *= 1000000;
+              
+              if (baseNumber >= 1 && baseNumber <= 100000000) {
+                bountyAmount = `$${value}`;
+              }
+            }
+          }
+
+          if (bountyAmount) break;
+        }
+
+        if (bountyAmount) {
+          parsedAmount = parseBountyAmount(bountyAmount);
+        }
+      } catch (e) {
+        // Skip bounty amount parsing if labels are malformed
+      }
+
+      return {
+        ...bounty,
+        amount: bountyAmount,
+        parsedAmount
+      };
     });
 
+    // Calculate totals if not cached
+    if (!totalData) {
+      if (allBounties.length > 0) {
+        // We have bounty data, calculate totals
+        const totalAmount = bountiesWithAmounts.reduce((sum, bounty) => sum + bounty.parsedAmount, 0);
+        const totalCount = bountiesWithAmounts.filter(bounty => bounty.amount).length;
+        
+        totalData = {
+          count: totalCount,
+          amount: totalAmount,
+          formatted: formatBountyAmount(totalAmount),
+          lastUpdated: new Date().toISOString()
+        };
+
+        // Cache the calculated totals (24 hours)
+        await redis.setex("bounty:total", 86400, JSON.stringify(totalData));
+        console.log(`Calculated and cached totals: ${totalCount} bounties, ${formatBountyAmount(totalAmount)}`);
+      } else {
+        // No bounty data available - use fallback totals
+        console.log("No bounty data available, using fallback totals");
+        totalData = {
+          count: 0,
+          amount: 0,
+          formatted: "$0",
+          lastUpdated: new Date().toISOString()
+        };
+      }
+    }
+
+    // Prepare response based on mode
+    const response: BountyResponse = {
+      success: true,
+      data: {
+        total: {
+          count: totalData.count,
+          amount: totalData.amount,
+          formatted: totalData.formatted
+        }
+      },
+      cached: isCachedTotal && isCachedBounties,
+      timestamp: new Date().toISOString()
+    };
+
+    // If requesting bounty list or both
+    if (mode === 'list' || mode === 'both') {
+      // Filter bounties with amounts
+      let validBounties = bountiesWithAmounts.filter(bounty => bounty.amount);
+      
+      // Apply language filter if specified
+      if (language && language !== 'all') {
+        validBounties = validBounties.filter(bounty => 
+          bounty.language && bounty.language.toLowerCase() === language.toLowerCase()
+        );
+      }
+
+      // Sort bounties
+      validBounties.sort((a, b) => {
+        let comparison = 0;
+        
+        switch (sortBy) {
+          case 'amount':
+            comparison = b.parsedAmount - a.parsedAmount;
+            break;
+          case 'created':
+            comparison = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+            break;
+          case 'updated':
+            comparison = new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+            break;
+          default:
+            comparison = b.parsedAmount - a.parsedAmount;
+        }
+
+        return order === 'asc' ? -comparison : comparison;
+      });
+
+      // Paginate
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedBounties = validBounties.slice(startIndex, endIndex);
+      const totalPages = Math.ceil(validBounties.length / limit);
+
+      response.data.bounties = paginatedBounties;
+      response.data.pagination = {
+        page,
+        limit,
+        hasMore: endIndex < validBounties.length,
+        totalPages
+      };
+    }
+
+    return NextResponse.json(response);
+
   } catch (error) {
-    console.error("Error fetching bounty issues:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch bounty issues" },
-      { status: 500 }
-    );
+    console.error("Error in unified bounty API:", error);
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+      data: {
+        total: {
+          count: 0,
+          amount: 0,
+          formatted: "$0"
+        }
+      },
+      cached: false,
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
   }
 }
 
-// Get available languages from bounty issues
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
-    const github = new GitHubAPI(process.env.GITHUB_TOKEN);
-    
-    const result = await github.searchIssues(
-      'label:"💎 Bounty" state:open',
-      1,
-      100 // per_page
-    );
+    // Get bounties from cache to extract languages
+    const cachedBounties = await redis.get("snapshots:latest");
+    let allBounties: BountyItem[] = [];
 
-    const data = result.data;
-    
-    // Extract unique languages from repositories
-    const languages = new Set<string>();
-    
-    await Promise.all(
-      data.items.slice(0, 50).map(async (issue: any) => {
-        try {
-          const repoResponse = await fetch(issue.repository_url, {
-            headers: {
-              "Accept": "application/vnd.github.v3+json",
-              "User-Agent": "Cursor-Directory-App",
-              ...(process.env.GITHUB_TOKEN && {
-                "Authorization": `token ${process.env.GITHUB_TOKEN}`
-              })
-            },
-            next: { revalidate: 3600 }
-          });
-          
-          if (repoResponse.ok) {
-            const repoData = await repoResponse.json();
-            if (repoData.language) {
-              languages.add(repoData.language);
+    if (cachedBounties) {
+      try {
+        allBounties = JSON.parse(cachedBounties);
+      } catch (e) {
+        allBounties = [];
+      }
+    }
+
+    // Extract unique languages from bounties with amounts
+    const bountiesWithAmounts: BountyWithAmount[] = allBounties.map(bounty => {
+      let bountyAmount: string | null = null;
+      let parsedAmount = 0;
+
+      try {
+        const labels = JSON.parse(bounty.labels || '[]');
+        
+        for (const labelName of labels) {
+          // Enhanced pattern matching for various bounty formats
+          const patterns = [
+            /\$(\d+(?:\.\d{2})?)/,
+            /(\d+(?:\.\d{2})?)\s*USD/i,
+            /(\d+(?:\.\d{2})?)\s*dollars?/i,
+            /(\d+(?:k|K))/,
+            /(\d+(?:m|M))/
+          ];
+
+          for (const pattern of patterns) {
+            const match = labelName.match(pattern);
+            if (match) {
+              const value = match[1].toLowerCase();
+              const numericPart = parseFloat(value.replace(/[km]/i, ''));
+              const hasK = value.includes('k');
+              const hasM = value.includes('m');
+              
+              let baseNumber = numericPart;
+              if (hasK) baseNumber *= 1000;
+              if (hasM) baseNumber *= 1000000;
+              
+              if (baseNumber >= 1 && baseNumber <= 100000000) {
+                bountyAmount = `$${value}`;
+              }
             }
           }
-        } catch (error) {
-          console.error("Error fetching repo language:", error);
+
+          if (bountyAmount) break;
         }
-      })
-    );
+
+        if (bountyAmount) {
+          parsedAmount = parseBountyAmount(bountyAmount);
+        }
+      } catch (e) {
+        // Skip bounty amount parsing if labels are malformed
+      }
+
+      return {
+        ...bounty,
+        amount: bountyAmount,
+        parsedAmount
+      };
+    });
+
+    // Get unique languages from bounties with amounts
+    const validBounties = bountiesWithAmounts.filter(bounty => bounty.amount);
+    const languages = [...new Set(validBounties
+      .map(bounty => bounty.language)
+      .filter(lang => lang && lang.trim() !== '')
+    )].sort();
 
     return NextResponse.json({
-      languages: Array.from(languages).sort()
+      success: true,
+      languages
     });
 
   } catch (error) {
     console.error("Error fetching languages:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch languages" },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+      languages: []
+    }, { status: 500 });
   }
 }

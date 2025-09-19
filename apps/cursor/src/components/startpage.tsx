@@ -21,6 +21,7 @@ export function Startpage({
   jobs,
   mcps,
   totalUsers,
+  totalBountyAmount,
   members,
   popularPosts,
 }: {
@@ -28,6 +29,7 @@ export function Startpage({
   jobs?: Job[] | null;
   mcps?: MCP[] | null;
   totalUsers: number;
+  totalBountyAmount?: string;
   members: unknown[] | null;
   popularPosts: unknown[] | null;
 }) {
@@ -49,7 +51,7 @@ export function Startpage({
             <Cursor />
           </div>
 
-          <HeroTitle totalUsers={totalUsers} />
+          <HeroTitle totalUsers={totalUsers} totalBountyAmount={totalBountyAmount} />
 
           <div className="max-w-[620px] mx-auto w-full mb-14">
             <GlobalSearchInput />

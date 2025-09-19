@@ -44,7 +44,12 @@ export function BountyFilters({
         
         if (response.ok) {
           const data = await response.json();
-          setLanguages(data.languages || []);
+          // Filter to only allowed languages
+          const allowedLanguages = ["C++", "Go", "HCL", "JavaScript", "PHP", "Ruby", "Rust", "Scala", "TypeScript"];
+          const filteredLanguages = (data.languages || []).filter((lang: string) => 
+            allowedLanguages.includes(lang)
+          );
+          setLanguages(filteredLanguages);
         }
       } catch (error) {
         console.error("Error fetching languages:", error);
@@ -56,9 +61,14 @@ export function BountyFilters({
     fetchLanguages();
   }, []);
 
+  // Hardcode language order with priority languages first
+  const priorityLanguages = ["TypeScript", "Rust", "Go", "Ruby"];
+  const otherLanguages = languages.filter(lang => !priorityLanguages.includes(lang)).sort();
+  const orderedLanguages = [...priorityLanguages.filter(lang => languages.includes(lang)), ...otherLanguages];
+
   const languageOptions = [
     { name: "All Languages", value: "all", count: totalBounties },
-    ...languages.map(lang => ({ name: lang, value: lang.toLowerCase(), count: 0 }))
+    ...orderedLanguages.map(lang => ({ name: lang, value: lang.toLowerCase(), count: 0 }))
   ];
 
   return (

@@ -26,14 +26,6 @@ export const users = pgTable("users", {
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
-  slug: text("slug"),
-  hero: text("hero"),
-  status: text("status"),
-  bio: text("bio"),
-  work: text("work"),
-  website: text("website"),
-  socialXLink: text("social_x_link"),
-  public: boolean("public"),
 });
 
 // Companies table

@@ -2,30 +2,13 @@ import { db } from "@/db";
 import { users, posts, votes, companies, jobs, mcps } from "@/db/schema";
 import { eq, and, desc, count, or, asc, ne, ilike } from "drizzle-orm";
 
-export async function getUserProfile(slugOrId: string, userId?: string) {
-  // First try to find by slug
-  let whereConditions = userId 
-    ? and(eq(users.slug, slugOrId), eq(users.id, userId))
-    : and(eq(users.slug, slugOrId), eq(users.public, true));
-
-  let userData = await db
+export async function getUserProfile(userId: string) {
+  // Find user by ID only
+  const userData = await db
     .select()
     .from(users)
-    .where(whereConditions)
+    .where(eq(users.id, userId))
     .limit(1);
-
-  // If not found by slug, try to find by ID
-  if (!userData.length) {
-    whereConditions = userId 
-      ? and(eq(users.id, slugOrId), eq(users.id, userId))
-      : and(eq(users.id, slugOrId), eq(users.public, true));
-
-    userData = await db
-      .select()
-      .from(users)
-      .where(whereConditions)
-      .limit(1);
-  }
 
   if (!userData.length) {
     return {
@@ -56,7 +39,6 @@ export async function getUserProfile(slugOrId: string, userId?: string) {
   return {
     data: {
       ...user,
-      social_x_link: user.socialXLink,
       created_at: user.createdAt,
       posts: userPosts.map((post) => ({
         ...post,
@@ -83,13 +65,12 @@ export async function getPopularPosts() {
         vote_count: count(votes.id),
         user_name: users.name,
         user_avatar: users.image,
-        user_slug: users.slug,
-        user_website: users.website,
+
       })
       .from(posts)
       .leftJoin(votes, eq(posts.id, votes.postId))
       .leftJoin(users, eq(posts.userId, users.id))
-      .groupBy(posts.id, users.id, users.name, users.image, users.slug, users.website)
+      .groupBy(posts.id, users.id, users.name, users.image)
       .orderBy(desc(count(votes.id)))
       .limit(50);
 
@@ -112,8 +93,7 @@ export async function getPopularPosts() {
         vote_count: Number(post.vote_count),
         user_name: post.user_name || "Unknown",
         user_avatar: post.user_avatar || "",
-        user_slug: post.user_slug || "",
-        user_website: post.user_website || "",
+
         slug: post.post_id, // Using post id as slug
         has_voted: false, // This would need to be calculated based on current user
       };
@@ -345,12 +325,11 @@ export async function getNewUsers() {
   try {
     const data = await db
       .select({
-        slug: users.slug,
+        id: users.id,
         name: users.name,
         image: users.image,
       })
       .from(users)
-      .where(eq(users.public, true))
       .orderBy(desc(users.createdAt))
       .limit(24);
 
