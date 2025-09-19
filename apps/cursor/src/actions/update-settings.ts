@@ -21,6 +21,7 @@ export const updateSettingsAction = authActionClient
     // Return user info without any updates
     const [user] = await db
       .select({ id: users.id, slug: users.slug })
+      .from(users)
       .where(eq(users.id, userId));
 
     return user;
