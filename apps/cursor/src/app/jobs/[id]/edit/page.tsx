@@ -5,7 +5,6 @@ import { getJobById } from "@/data/queries";
 import { getSession } from "@/lib/auth-server";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { Suspense } from "react";
 
 type Params = Promise<{ id: string }>;
 
@@ -31,9 +30,7 @@ export default async function Page({ params }: { params: Params }) {
 
           <div className="mt-10 flex flex-col gap-4">
             <div className="flex flex-col gap-4">
-              <Suspense fallback={<div>Loading...</div>}>
-                <GithubSignin redirectTo={`/jobs/${id}/edit`} />
-              </Suspense>
+              <GithubSignin redirectTo={`/jobs/${id}/edit`} />
             </div>
           </div>
         </div>
