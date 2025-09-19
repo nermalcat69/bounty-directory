@@ -45,9 +45,7 @@ export function HeroTitle({
         }}
       >
         The home for Open Source enthusiasts where you can find bounties, jobs,{" "}
-        <Link href="/mcp" className="border-b border-border border-dashed">
-          MCPs
-        </Link>
+
         , post the latest news on the board, learn, connect, and
         discover{" "}
         <Link href="/jobs" className="border-b border-border border-dashed">

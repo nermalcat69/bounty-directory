@@ -12,6 +12,7 @@ const navigationLinks = [
   { href: "/rules", label: "Bounties" },
   { href: "/freelance", label: "Freelance" },
   { href: "/jobs", label: "Jobs" },
+  { href: "/how-to-get-listed", label: "Get Listed" },
   { href: "/advertise", label: "Advertise" },
   { href: "/our-analytics", label: "Our Analytics" },
   { href: "/about", label: "About" },

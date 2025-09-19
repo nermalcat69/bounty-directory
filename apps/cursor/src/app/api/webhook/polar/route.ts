@@ -1,7 +1,5 @@
 import {
   activateJobListing,
-  activateMCPListing,
-  downgradeMCPListing,
 } from "@/lib/polar";
 import { Webhooks } from "@polar-sh/nextjs";
 
@@ -24,18 +22,7 @@ export const POST = Webhooks({
         break;
       }
 
-      case "subscription.active": {
-        await activateMCPListing(
-          payload.data.metadata.mcpListingId as string,
-          payload.data.metadata.plan as string,
-        );
-        break;
-      }
 
-      case "subscription.revoked": {
-        await downgradeMCPListing(payload.data.metadata.mcpListingId as string);
-        break;
-      }
 
       default:
         console.log("Unknown event", payload.type);

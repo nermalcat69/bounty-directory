@@ -1,34 +1,27 @@
 import { StartpageServer } from "@/components/startpage-server";
 import {
   getFeaturedJobs,
-  getFeaturedMCPs,
   getPopularPosts,
   getTotalUsers,
 } from "@/data/queries";
 import { getTotalBountyAmountForISR } from "@/lib/server-bounty-fetcher";
 import { getPopularRules } from "@directories/data/popular";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
-  title: "Cursor Directory - Cursor Rules, MCPs & Bounties",
+  title: "Cursor Directory - Cursor Rules & Bounties",
   description:
-    "Enhance your Cursor with custom rules, find MCP servers, discover bounties, and join a community of Cursor enthusiasts.",
+    "Enhance your Cursor with custom rules, discover bounties, and join a community of Cursor enthusiasts.",
 };
 
 // Enable ISR with 5-minute revalidation for better performance
 export const revalidate = 300; // Revalidate every 5 minutes
 
-// Tags for on-demand revalidation
-export const tags = ['homepage', 'bounties', 'total-bounty-amount'];
-
 export default async function Page() {
   const popularRules = await getPopularRules();
   
   const { data: featuredJobsData } = await getFeaturedJobs({
-    onlyPremium: true,
-  });
-
-  const { data: featuredMCPsData } = await getFeaturedMCPs({
     onlyPremium: true,
   });
 
@@ -46,20 +39,6 @@ export default async function Page() {
     link: job.link,
   })) || null;
 
-  // Transform the MCPs data to match the MCP type expected by Startpage
-  const featuredMCPs = featuredMCPsData?.map(mcp => ({
-    id: mcp.id,
-    name: mcp.name,
-    logo: "", // No logo available in current schema
-    description: mcp.description || "",
-    slug: mcp.slug,
-    user: {
-      name: "MCP Server",
-      slug: "mcp",
-      image: "",
-    },
-  })) || null;
-
   const { data: totalUsers } = await getTotalUsers();
   const totalBountyAmount = await getTotalBountyAmountForISR();
 
@@ -71,7 +50,6 @@ export default async function Page() {
         <StartpageServer
           sections={popularRules}
           jobs={featuredJobs}
-          mcps={featuredMCPs}
           totalUsers={totalUsers?.count ?? 0}
           totalBountyAmount={totalBountyAmount}
           members={null}

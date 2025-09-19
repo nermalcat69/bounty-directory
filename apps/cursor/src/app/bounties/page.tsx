@@ -10,9 +10,6 @@ export const metadata: Metadata = {
 // Enable ISR with 5-minute revalidation for better performance
 export const revalidate = 300; // Revalidate every 5 minutes
 
-// Tags for on-demand revalidation
-export const tags = ['bounties', 'bounty-list'];
-
 export default function BountiesPage() {
   return <BountyPage />;
 }

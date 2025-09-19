@@ -12,6 +12,8 @@ import { useSession } from "@/lib/auth-client";
 import { parseAsBoolean, useQueryStates } from "nuqs";
 import { useEffect, useState } from "react";
 import { AddCompanyButton } from "./add-company-button";
+import { getUserCompaniesAction } from "@/actions/get-user-companies";
+import { useAction } from "next-safe-action/hooks";
 
 type Company = {
   id: string;
@@ -28,24 +30,27 @@ export function CompanySelect({
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
   const { data: session } = useSession();
+  const { execute: fetchCompanies } = useAction(getUserCompaniesAction, {
+    onSuccess: (result) => {
+      if (result.data) {
+        setCompanies(result.data);
+      }
+    },
+    onError: () => {
+      setCompanies([]);
+    },
+  });
   const [{ reload }, setQueryStates] = useQueryStates({
     reload: parseAsBoolean.withDefault(false),
     addCompany: parseAsBoolean.withDefault(false),
   });
 
   useEffect(() => {
-    async function fetchCompanies() {
-      if (!session?.user?.id) {
-        setCompanies([]);
-        return;
-      }
-
-      // TODO: Replace with proper database query using Drizzle
-      // For now, we'll use empty array
+    if (session?.user?.id) {
+      fetchCompanies();
+    } else {
       setCompanies([]);
     }
-
-    fetchCompanies();
 
     if (reload) {
       setQueryStates({ reload: false, addCompany: false });

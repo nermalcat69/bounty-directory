@@ -80,16 +80,7 @@ export default function WelcomeEmail({
               discussions
             </Text>
 
-            <Text className="text-xs font-mono">
-              <span className="text-lg">◇ </span>
-              <Link
-                href="https://bounty.directory/mcp"
-                className="underline text-black font-mono"
-              >
-                Dive into MCPs
-              </Link>{" "}
-              – Discover and contribute to the growing MCP ecosystem
-            </Text>
+
 
             <Text className="text-xs font-mono">
               <span className="text-lg">◇ </span>

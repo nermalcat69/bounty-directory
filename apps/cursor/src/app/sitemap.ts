@@ -1,4 +1,4 @@
-import { getCompanies, getMCPs } from "@/data/queries";
+import { getCompanies } from "@/data/queries";
 import { getSections } from "@directories/data/rules";
 import type { MetadataRoute } from "next";
 
@@ -34,12 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily",
       priority: 0.9,
     },
-    {
-      url: `${BASE_URL}/mcp`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
+
   ];
 
   // Add routes for each rules section
@@ -63,19 +58,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   }
 
-  // Add routes for each MCP integration
-  const { data: mcpData } = await getMCPs();
 
-  if (mcpData) {
-    for (const mcp of mcpData) {
-      routes.push({
-        url: `${BASE_URL}/mcp/${mcp.slug}`,
-        lastModified: new Date(),
-        changeFrequency: "weekly",
-        priority: 0.6,
-      });
-    }
-  }
 
   // Add routes for each company
   const { data: companyData } = await getCompanies();

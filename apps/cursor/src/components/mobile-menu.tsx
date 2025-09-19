@@ -11,15 +11,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 
 const navigationLinks = [
-  { href: "/rules", label: "Rules" },
-  { href: "/board", label: "Board" },
+  { href: "/rules", label: "Bounties" },
+  { href: "/freelance", label: "Freelance" },
   { href: "/jobs", label: "Jobs" },
-  { href: "/mcp", label: "MCP Store" },
-  { href: "/learn", label: "Learn" },
-  { href: "/games", label: "Games" },
+  { href: "/how-to-get-listed", label: "Get Listed" },
   { href: "/advertise", label: "Advertise" },
+  { href: "/our-analytics", label: "Our Analytics" },
   { href: "/about", label: "About" },
-  { href: "/events", label: "Events" },
 ] as const;
 
 export function MobileMenu() {

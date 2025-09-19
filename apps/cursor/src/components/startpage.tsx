@@ -8,8 +8,7 @@ import { BoardPost } from "./board/board-post";
 import { GlobalSearchInput } from "./global-search-input";
 import { HeroTitle } from "./hero-title";
 import { type Job, JobsFeatured } from "./jobs/jobs-featured";
-import MCPList from "./mcp-list";
-import type { MCP } from "./mcps/mcps-featured";
+
 import { BountiesFeatured } from "./bounties/bounties-featured";
 import { BountiesSection } from "./bounties-section";
 
@@ -19,7 +18,6 @@ import { Cursor } from "./ui/cursor";
 export function Startpage({
   sections,
   jobs,
-  mcps,
   totalUsers,
   totalBountyAmount,
   members,
@@ -27,7 +25,6 @@ export function Startpage({
 }: {
   sections: Section[];
   jobs?: Job[] | null;
-  mcps?: MCP[] | null;
   totalUsers: number;
   totalBountyAmount?: string;
   members: unknown[] | null;

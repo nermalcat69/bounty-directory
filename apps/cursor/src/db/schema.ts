@@ -67,20 +67,7 @@ export const jobs = pgTable("jobs", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// MCPs table
-export const mcps = pgTable("mcps", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: varchar("name", { length: 255 }).notNull(),
-  slug: varchar("slug", { length: 255 }).unique().notNull(),
-  description: text("description"),
-  repository: text("repository"),
-  npmPackage: text("npm_package"),
-  companyId: uuid("company_id").references(() => companies.id),
-  plan: planEnum("plan").default("standard"),
-  active: boolean("active").default(true),
-  order: integer("order").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+
 
 // Follow functionality removed - followers table deleted
 
@@ -208,7 +195,6 @@ export const companiesRelations = relations(companies, ({ one, many }) => ({
     references: [users.id],
   }),
   jobs: many(jobs),
-  mcps: many(mcps),
 }));
 
 export const postsRelations = relations(posts, ({ one, many }) => ({
@@ -226,12 +212,7 @@ export const jobsRelations = relations(jobs, ({ one }) => ({
   }),
 }));
 
-export const mcpsRelations = relations(mcps, ({ one }) => ({
-  company: one(companies, {
-    fields: [mcps.companyId],
-    references: [companies.id],
-  }),
-}));
+
 
 // Follow functionality removed - followersRelations deleted
 

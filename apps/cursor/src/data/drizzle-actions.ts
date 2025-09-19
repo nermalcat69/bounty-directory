@@ -4,8 +4,7 @@ import {
   jobs, 
   companies, 
   users, 
-  votes,
-  mcps 
+  votes
 } from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 
@@ -189,45 +188,4 @@ export async function votePost(userId: string, postId: string) {
     
     return { action: "added", vote: result[0] };
   }
-}
-
-// MCP actions
-export async function createMCP(data: {
-  name: string;
-  slug: string;
-  description?: string;
-  repository?: string;
-  npmPackage?: string;
-  companyId?: string;
-  plan?: "standard" | "featured" | "premium";
-}) {
-  const result = await db
-    .insert(mcps)
-    .values({
-      ...data,
-      plan: data.plan || "standard",
-    })
-    .returning();
-
-  return result[0];
-}
-
-export async function updateMCP(
-  mcpId: string,
-  data: Partial<{
-    name: string;
-    slug: string;
-    description: string;
-    repository: string;
-    npmPackage: string;
-    active: boolean;
-  }>
-) {
-  const result = await db
-    .update(mcps)
-    .set(data)
-    .where(eq(mcps.id, mcpId))
-    .returning();
-
-  return result[0];
 }

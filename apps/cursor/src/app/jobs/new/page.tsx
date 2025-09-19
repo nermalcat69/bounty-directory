@@ -2,12 +2,15 @@ import { JobForm } from "@/components/forms/job";
 import { GithubSignin } from "@/components/github-signin";
 import { getSession } from "@/lib/auth-server";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Create a new job listing | Cursor Directory",
   description:
     "Create a new job listing on Cursor Directory and reach 300k+ developers today.",
 };
+
+export const dynamic = "force-dynamic";
 
 export default async function Page() {
   const session = await getSession();
@@ -23,7 +26,9 @@ export default async function Page() {
 
           <div className="mt-10 flex flex-col gap-4">
             <div className="flex flex-col gap-4">
-              <GithubSignin redirectTo="/jobs/new" />
+              <Suspense fallback={<div>Loading...</div>}>
+                <GithubSignin redirectTo="/jobs/new" />
+              </Suspense>
             </div>
           </div>
         </div>

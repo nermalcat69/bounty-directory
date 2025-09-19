@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { users, posts, votes, companies, jobs, mcps } from "@/db/schema";
+import { users, posts, votes, companies, jobs } from "@/db/schema";
 import { eq, and, desc, count, or, asc, ne, ilike } from "drizzle-orm";
 
 export async function getUserProfile(userId: string) {
@@ -282,32 +282,7 @@ export async function getJobById(id: string) {
   }
 }
 
-export async function getFeaturedMCPs({
-  onlyPremium,
-}: {
-  onlyPremium?: boolean;
-} = {}) {
-  try {
-    const planCondition = onlyPremium 
-      ? eq(mcps.plan, "premium")
-      : or(eq(mcps.plan, "featured"), eq(mcps.plan, "premium"));
 
-    const data = await db
-      .select()
-      .from(mcps)
-      .where(and(eq(mcps.active, true), planCondition))
-      .orderBy(desc(mcps.createdAt), desc(mcps.order), desc(mcps.createdAt))
-      .limit(100);
-
-    return {
-      // Shuffle the data
-      data: data?.sort(() => Math.random() - 0.5),
-      error: null,
-    };
-  } catch (error) {
-    return { data: null, error };
-  }
-}
 
 export async function getTotalUsers() {
   try {
@@ -334,63 +309,6 @@ export async function getNewUsers() {
       .limit(24);
 
     return { data, error: null };
-  } catch (error) {
-    return { data: null, error };
-  }
-}
-
-export async function getMCPs({
-  page = 1,
-  limit = 36,
-}: {
-  page?: number;
-  limit?: number;
-} = {}) {
-  try {
-    const data = await db
-      .select()
-      .from(mcps)
-      .where(eq(mcps.active, true))
-      .orderBy(asc(mcps.companyId))
-      .limit(limit)
-      .offset((page - 1) * limit);
-
-    return { data, error: null };
-  } catch (error) {
-    return { data: null, error };
-  }
-}
-
-export async function getMCPBySlug(slug: string) {
-  try {
-    const data = await db
-      .select({
-        id: mcps.id,
-        name: mcps.name,
-        slug: mcps.slug,
-        description: mcps.description,
-        repository: mcps.repository,
-        npmPackage: mcps.npmPackage,
-        companyId: mcps.companyId,
-        plan: mcps.plan,
-        active: mcps.active,
-        order: mcps.order,
-        createdAt: mcps.createdAt,
-        owner_id: companies.ownerId,
-        company: {
-          id: companies.id,
-          name: companies.name,
-          slug: companies.slug,
-          image: companies.image,
-          ownerId: companies.ownerId,
-        },
-      })
-      .from(mcps)
-      .leftJoin(companies, eq(mcps.companyId, companies.id))
-      .where(eq(mcps.slug, slug))
-      .limit(1);
-
-    return { data: data[0] || null, error: null };
   } catch (error) {
     return { data: null, error };
   }

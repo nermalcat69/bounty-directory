@@ -4,7 +4,6 @@ import {
   posts, 
   companies, 
   jobs, 
-  mcps, 
   votes,
   avatars 
 } from "@/db/schema";
@@ -187,84 +186,7 @@ export async function getJobById(jobId: string) {
   return result[0] || null;
 }
 
-// MCP queries
-export async function getFeaturedMCPs() {
-  return await db
-    .select({
-      id: mcps.id,
-      name: mcps.name,
-      slug: mcps.slug,
-      description: mcps.description,
-      repository: mcps.repository,
-      npmPackage: mcps.npmPackage,
-      plan: mcps.plan,
-      createdAt: mcps.createdAt,
-      company: {
-        id: companies.id,
-        name: companies.name,
-        slug: companies.slug,
-        image: companies.image,
-      },
-    })
-    .from(mcps)
-    .leftJoin(companies, eq(mcps.companyId, companies.id))
-    .where(and(eq(mcps.active, true), eq(mcps.plan, "featured")))
-    .orderBy(asc(mcps.order), desc(mcps.createdAt))
-    .limit(10);
-}
 
-export async function getMCPs() {
-  return await db
-    .select({
-      id: mcps.id,
-      name: mcps.name,
-      slug: mcps.slug,
-      description: mcps.description,
-      repository: mcps.repository,
-      npmPackage: mcps.npmPackage,
-      plan: mcps.plan,
-      createdAt: mcps.createdAt,
-      company: {
-        id: companies.id,
-        name: companies.name,
-        slug: companies.slug,
-        image: companies.image,
-      },
-    })
-    .from(mcps)
-    .leftJoin(companies, eq(mcps.companyId, companies.id))
-    .where(eq(mcps.active, true))
-    .orderBy(sql`RANDOM()`)
-    .limit(20);
-}
-
-export async function getMCPBySlug(slug: string) {
-  const result = await db
-    .select({
-      id: mcps.id,
-      name: mcps.name,
-      slug: mcps.slug,
-      description: mcps.description,
-      repository: mcps.repository,
-      npmPackage: mcps.npmPackage,
-      plan: mcps.plan,
-      createdAt: mcps.createdAt,
-      company: {
-        id: companies.id,
-        name: companies.name,
-        slug: companies.slug,
-        description: companies.description,
-        website: companies.website,
-        image: companies.image,
-      },
-    })
-    .from(mcps)
-    .leftJoin(companies, eq(mcps.companyId, companies.id))
-    .where(eq(mcps.slug, slug))
-    .limit(1);
-
-  return result[0] || null;
-}
 
 // Stats queries
 export async function getTotalUsers() {

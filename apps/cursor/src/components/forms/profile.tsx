@@ -106,13 +106,6 @@ export function ProfileForm({ data }: { data: ProfileData }) {
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     execute({
       name: data.name,
-      status: data.status || null,
-      bio: data.bio || null,
-      work: data.work || null,
-      website: data.website || null,
-      social_x_link: data.social_x_link || null,
-      is_public: data.is_public,
-      slug: data.slug,
     });
   };
 

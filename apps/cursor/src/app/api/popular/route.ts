@@ -4,9 +4,8 @@ import { NextResponse } from "next/server";
 export const revalidate = 86400; // Revalidate once every day
 export const dynamic = "force-static";
 
-const popularRules = await getPopularRules();
-
 export async function GET() {
+  const popularRules = await getPopularRules();
   const allRules = popularRules.flatMap((section) => section.rules);
 
   // Create a Set to track unique slugs and an array for unique rules

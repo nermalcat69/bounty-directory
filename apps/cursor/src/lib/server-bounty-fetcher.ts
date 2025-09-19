@@ -135,8 +135,7 @@ export async function fetchBountiesForISR(options: {
       totalData = {
         count: totalCount,
         amount: totalAmount,
-        formatted: formatBountyAmount(totalAmount),
-        lastUpdated: new Date().toISOString()
+        formatted: formatBountyAmount(totalAmount)
       };
 
       // Cache the calculated totals
