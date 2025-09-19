@@ -33,7 +33,7 @@ export function BountyCard({ bounty, isPage }: { bounty: BountyWithAmount; isPag
       href={bounty.html_url} 
       target="_blank" 
       rel="noopener noreferrer"
-      className="block h-full"
+      className="block"
     >
       <Card
         className={cn(

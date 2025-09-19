@@ -1,4 +1,5 @@
 import "server-only";
+import { redis } from "./kv";
 
 export interface GitHubIssue {
   id: number;
@@ -157,13 +158,36 @@ export class GitHubAPI {
   }
 
   async getRepositoryLanguage(owner: string, repo: string): Promise<string | null> {
+    const cacheKey = `repo:language:${owner}/${repo}`;
+    
     try {
+      // Check cache first
+      const cached = await redis.get(cacheKey);
+      if (cached !== null) {
+        console.log(`Cache hit for repo language: ${owner}/${repo}`);
+        return cached === 'null' ? null : cached;
+      }
+
+      console.log(`Cache miss for repo language: ${owner}/${repo}, fetching from GitHub`);
       const response = await this.request<{ language: string | null }>(`/repos/${owner}/${repo}`);
-      return response.data.language;
+      const language = response.data.language;
+      
+      // Cache for 1 hour (3600 seconds)
+      await redis.setex(cacheKey, 3600, language || 'null');
+      
+      return language;
     } catch (error) {
-      console.error(`Error fetching repository language for ${owner}/${repo}:`, error);
+      console.error(`Failed to get language for ${owner}/${repo}:`, error);
       return null;
     }
+  }
+
+  async getRepositoryIssues(owner: string, repo: string, state: "open" | "closed" | "all" = "open", perPage = 100): Promise<{ data: GitHubIssue[]; rateLimit: { remaining: number; reset: number } }> {
+    const response = await this.request<GitHubIssue[]>(`/repos/${owner}/${repo}/issues?state=${state}&per_page=${perPage}`);
+    return {
+      data: response.data,
+      rateLimit: response.rateLimit
+    };
   }
 }
 
@@ -194,4 +218,71 @@ export async function extractLanguageFromRepository(github: GitHubAPI, repositor
 export function extractLanguageFromLabels(labels: Array<{ name: string }>): string | null {
   // This function is deprecated - use extractLanguageFromRepository instead
   return null;
+}
+
+/**
+ * Fetch antiwork bounties using their specific repositories and bounty labels
+ */
+export async function fetchAntiworkBounties(github: GitHubAPI): Promise<GitHubIssue[]> {
+  const BOUNTY_LABELS = ["$1K", "$2.5K", "$5K", "$10K", "$20K"];
+  const REPOSITORIES = [
+    "antiwork/gumroad",
+    "antiwork/flexile", 
+    "antiwork/helper",
+    "antiwork/gumboard",
+  ];
+
+  const allIssues: GitHubIssue[] = [];
+
+  for (const repo of REPOSITORIES) {
+    try {
+      const [owner, repoName] = repo.split('/');
+      
+      const response = await github.getRepositoryIssues(owner, repoName, "open", 100);
+      const issues = response.data;
+
+      // Filter for bounty issues (not pull requests, with bounty labels)
+      const bountyIssues = issues
+        .filter((issue: any) => !issue.pull_request)
+        .filter((issue) => 
+          issue.labels.some((label: any) => BOUNTY_LABELS.includes(label.name))
+        )
+        .map((issue) => ({
+          ...issue,
+          repository_url: `https://api.github.com/repos/${repo}`
+        }));
+
+      allIssues.push(...bountyIssues);
+    } catch (error) {
+      console.error(`Error fetching antiwork issues from ${repo}:`, error);
+      // Continue with other repositories even if one fails
+    }
+  }
+
+  // Remove duplicates and sort by bounty value
+  const uniqueIssues = allIssues.filter(
+    (issue, index, self) => index === self.findIndex((i) => i.id === issue.id)
+  );
+
+  uniqueIssues.sort((a, b) => {
+    const getBountyValue = (labels: Array<{ name: string }>) => {
+      const bountyLabel = labels.find((label) => 
+        BOUNTY_LABELS.includes(label.name)
+      );
+      const values: { [key: string]: number } = {
+        "$1K": 1000,
+        "$2.5K": 2500,
+        "$5K": 5000,
+        "$10K": 10000,
+        "$20K": 20000,
+      };
+      return values[bountyLabel?.name || ""] || 0;
+    };
+
+    const valueA = getBountyValue(a.labels);
+    const valueB = getBountyValue(b.labels);
+    return valueB - valueA;
+  });
+
+  return uniqueIssues;
 }

@@ -21,7 +21,7 @@ export async function GET() {
     // Build search queries
     const bountyQuery = `label:"💎 Bounty" state:open created:>=${cutoffISO}`;
     const dollarQuery = `state:open created:>=${cutoffISO} "$" in:labels`;
-    const antiworkQuery = `org:antiwork state:open created:>=${cutoffISO}`;
+    const antiworkQuery = `org:antiwork state:open created:>=${cutoffISO} "$" in:labels`;
     
     let totalAmount = 0;
     let processed = 0;
@@ -105,7 +105,7 @@ export async function GET() {
     // Fetch all types of bounties (only for total calculation)
     await fetchBountiesForQuery(bountyQuery, "bounty labels");
     await fetchBountiesForQuery(dollarQuery, "dollar labels");
-    await fetchBountiesForQuery(antiworkQuery, "antiwork organization");
+    await fetchBountiesForQuery(antiworkQuery, "antiwork dollar labels");
     
     // Update only the total amount in Redis (24 hour expiration to match API expectations)
     const formattedTotal = formatBountyAmount(totalAmount);

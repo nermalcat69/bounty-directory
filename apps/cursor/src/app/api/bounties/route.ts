@@ -17,6 +17,7 @@ interface BountyItem {
   state: string;
   assignee: string | null;
   language: string | null;
+  amount: string | null; // Add amount field to match stored data
 }
 
 export interface BountyWithAmount extends BountyItem {
@@ -99,60 +100,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Process bounties with amounts
+    // Process bounties with amounts - use stored amount field instead of re-parsing labels
     const bountiesWithAmounts: BountyWithAmount[] = allBounties.map(bounty => {
-      let bountyAmount: string | null = null;
-      let parsedAmount = 0;
-
-      try {
-        const labels = JSON.parse(bounty.labels || '[]');
-        
-        for (const labelName of labels) {
-          // Enhanced pattern matching for various bounty formats
-          const priorityPatterns = [
-            /\$(\d+(?:\.\d+)?[km]?)/i,    // $100, $2k, $1.5m
-            /(\d+(?:\.\d+)?[km]?)\s*usd/i, // 100 USD, 2k USD
-            /(\d+(?:\.\d+)?[km]?)\s*dollars?/i, // 100 dollar(s)
-            /bounty[:\s]*\$?(\d+(?:\.\d+)?[km]?)/i, // bounty: $100
-            /reward[:\s]*\$?(\d+(?:\.\d+)?[km]?)/i, // reward: $100
-            /prize[:\s]*\$?(\d+(?:\.\d+)?[km]?)/i   // prize: $100
-          ];
-
-          for (const pattern of priorityPatterns) {
-            const match = labelName.match(pattern);
-            if (match) {
-              bountyAmount = `$${match[1]}`;
-              break;
-            }
-          }
-
-          if (!bountyAmount) {
-            const numberMatch = labelName.match(/(\d+(?:\.\d+)?[km]?)/i);
-            if (numberMatch) {
-              const value = numberMatch[1].toLowerCase();
-              const numericPart = parseFloat(value.replace(/[km]/i, ''));
-              const hasK = value.includes('k');
-              const hasM = value.includes('m');
-              
-              let baseNumber = numericPart;
-              if (hasK) baseNumber *= 1000;
-              if (hasM) baseNumber *= 1000000;
-              
-              if (baseNumber >= 1 && baseNumber <= 100000000) {
-                bountyAmount = `$${value}`;
-              }
-            }
-          }
-
-          if (bountyAmount) break;
-        }
-
-        if (bountyAmount) {
-          parsedAmount = parseBountyAmount(bountyAmount);
-        }
-      } catch (e) {
-        // Skip bounty amount parsing if labels are malformed
-      }
+      const bountyAmount = bounty.amount; // Use the stored amount field
+      const parsedAmount = bountyAmount ? parseBountyAmount(bountyAmount) : 0;
 
       return {
         ...bounty,
@@ -166,7 +117,7 @@ export async function GET(request: NextRequest) {
       if (allBounties.length > 0) {
         // We have bounty data, calculate totals
         const totalAmount = bountiesWithAmounts.reduce((sum, bounty) => sum + bounty.parsedAmount, 0);
-        const totalCount = bountiesWithAmounts.filter(bounty => bounty.amount).length;
+        const totalCount = allBounties.length; // Count all bounties, not just those with amounts
         
         totalData = {
           count: totalCount,
@@ -206,8 +157,8 @@ export async function GET(request: NextRequest) {
 
     // If requesting bounty list or both
     if (mode === 'list' || mode === 'both') {
-      // Filter bounties with amounts
-      let validBounties = bountiesWithAmounts.filter(bounty => bounty.amount);
+      // Start with all bounties (don't filter by amount)
+      let validBounties = bountiesWithAmounts;
       
       // Apply language filter if specified
       if (language && language !== 'all') {
@@ -274,6 +225,28 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const force = searchParams.get("force") === "true";
+    
+    // Check cache first for language statistics (unless force is true)
+    if (!force) {
+      const cachedLanguages = await redis.get("bounty:languages");
+      if (cachedLanguages) {
+        try {
+          const parsed = JSON.parse(cachedLanguages);
+          console.log("Retrieved cached language statistics");
+          return NextResponse.json({
+            success: true,
+            languages: parsed.languages,
+            cached: true,
+            timestamp: parsed.timestamp
+          });
+        } catch (e) {
+          console.error("Error parsing cached language data:", e);
+        }
+      }
+    }
+
     // Get bounties from cache to extract languages
     const cachedBounties = await redis.get("snapshots:latest");
     let allBounties: BountyItem[] = [];
@@ -286,58 +259,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Extract unique languages from bounties with amounts
-    const bountiesWithAmounts: BountyWithAmount[] = allBounties.map(bounty => {
-      let bountyAmount: string | null = null;
-      let parsedAmount = 0;
-
-      try {
-        const labels = JSON.parse(bounty.labels || '[]');
-        
-        for (const labelName of labels) {
-          // Enhanced pattern matching for various bounty formats
-          const patterns = [
-            /\$(\d+(?:\.\d{2})?)/,
-            /(\d+(?:\.\d{2})?)\s*USD/i,
-            /(\d+(?:\.\d{2})?)\s*dollars?/i,
-            /(\d+(?:k|K))/,
-            /(\d+(?:m|M))/
-          ];
-
-          for (const pattern of patterns) {
-            const match = labelName.match(pattern);
-            if (match) {
-              const value = match[1].toLowerCase();
-              const numericPart = parseFloat(value.replace(/[km]/i, ''));
-              const hasK = value.includes('k');
-              const hasM = value.includes('m');
-              
-              let baseNumber = numericPart;
-              if (hasK) baseNumber *= 1000;
-              if (hasM) baseNumber *= 1000000;
-              
-              if (baseNumber >= 1 && baseNumber <= 100000000) {
-                bountyAmount = `$${value}`;
-              }
-            }
-          }
-
-          if (bountyAmount) break;
-        }
-
-        if (bountyAmount) {
-          parsedAmount = parseBountyAmount(bountyAmount);
-        }
-      } catch (e) {
-        // Skip bounty amount parsing if labels are malformed
-      }
-
-      return {
-        ...bounty,
-        amount: bountyAmount,
-        parsedAmount
-      };
-    });
+    // The cached bounties already have amount fields populated, so we can use them directly
+    const bountiesWithAmounts: BountyWithAmount[] = allBounties.map(bounty => ({
+      ...bounty,
+      amount: bounty.amount || null,
+      parsedAmount: bounty.amount ? parseBountyAmount(bounty.amount) : 0
+    }));
 
     // Get unique languages from bounties with amounts
     const validBounties = bountiesWithAmounts.filter(bounty => bounty.amount);
@@ -346,9 +273,21 @@ export async function POST(request: NextRequest) {
       .filter(lang => lang && lang.trim() !== '')
     )].sort();
 
+    // Cache the language statistics for 6 hours (21600 seconds)
+    const languageData = {
+      languages,
+      timestamp: new Date().toISOString(),
+      count: languages.length
+    };
+    
+    await redis.setex("bounty:languages", 21600, JSON.stringify(languageData));
+    console.log(`Calculated and cached ${languages.length} languages`);
+
     return NextResponse.json({
       success: true,
-      languages
+      languages,
+      cached: false,
+      timestamp: languageData.timestamp
     });
 
   } catch (error) {

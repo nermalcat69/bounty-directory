@@ -112,8 +112,11 @@ async function updateTotalBountyCache(result: CacheUpdateResult) {
   try {
     // For total cache, we'll just invalidate it and let the next request recalculate
     // This is more reliable than trying to incrementally update the total
-    await redis.del('bounty:total');
-    result.updated.push('Invalidated total bounty cache for recalculation');
+    await Promise.all([
+      redis.del('bounty:total'),
+      redis.del('bounty:languages') // Also invalidate language statistics
+    ]);
+    result.updated.push('Invalidated total bounty and language caches for recalculation');
   } catch (error) {
     result.errors.push(`Failed to update total bounty cache: ${error instanceof Error ? error.message : String(error)}`);
   }

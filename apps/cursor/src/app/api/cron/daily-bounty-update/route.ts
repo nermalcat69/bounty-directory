@@ -3,10 +3,10 @@ import { GitHubAPI, extractLanguageFromRepository } from "@/lib/github";
 import { redis } from "@/lib/kv";
 import { parseBountyAmount, formatBountyAmount } from "@/utils/bounty-calculator";
 import { revalidatePath } from "next/cache";
+import { filterIssuesWithDollarLabels } from "@/utils/antiwork-filter";
 
 export async function GET() {
   try {
-    // Verify this is a legitimate cron request (you can add auth headers here)
     const authHeader = process.env.CRON_SECRET;
     
     console.log("Starting daily bounty update...");
@@ -21,7 +21,7 @@ export async function GET() {
     // Build search queries
     const bountyQuery = `label:"💎 Bounty" state:open created:>=${cutoffISO}`;
     const dollarQuery = `state:open created:>=${cutoffISO} "$" in:labels`;
-    const antiworkQuery = `org:antiwork state:open created:>=${cutoffISO}`;
+    const antiworkQuery = `org:antiwork is:issue state:open`; // Broader search, filter labels in code
     
     let allBounties: any[] = [];
     let totalAmount = 0;
@@ -37,46 +37,22 @@ export async function GET() {
       
       processed++;
       
-      const bountyData = {
-        id: issue.id.toString(),
-        repo: issue.repository_url.split('/').slice(-2).join('/'),
-        number: issue.number,
-        title: issue.title,
-        body: issue.body,
-        html_url: issue.html_url,
-        user_login: issue.user.login,
-        created_at: new Date(issue.created_at),
-        updated_at: new Date(issue.updated_at),
-        labels: JSON.stringify(issue.labels.map((l: any) => l.name)),
-        comments: issue.comments,
-        state: issue.state,
-        assignee: issue.assignee?.login || null,
-        language: await extractLanguageFromRepository(github, issue.repository_url)
-      };
-      
-      allBounties.push(bountyData);
-      
-      // Extract bounty amount
-      let bountyAmount = null;
-      
+      // Extract bounty amount from labels first
+      let bountyAmount = '';
       for (const label of issue.labels) {
-        const labelName = label.name;
+        const labelName = label.name.toLowerCase();
         
-        const priorityPatterns = [
-          /\$(\d+(?:\.\d+)?[km]?)/i,
-          /(\d+(?:\.\d+)?[km]?)\s*usd/i,
-          /(\d+(?:\.\d+)?[km]?)\s*dollars?/i,
-          /bounty[:\s]*\$?(\d+(?:\.\d+)?[km]?)/i,
-          /reward[:\s]*\$?(\d+(?:\.\d+)?[km]?)/i,
-          /prize[:\s]*\$?(\d+(?:\.\d+)?[km]?)/i
-        ];
-        
-        for (const pattern of priorityPatterns) {
-          const match = labelName.match(pattern);
+        if (labelName.includes('bounty') && labelName.includes('$')) {
+          const match = labelName.match(/\$(\d+(?:\.\d+)?[km]?)/i);
           if (match) {
             bountyAmount = `$${match[1]}`;
             break;
           }
+        }
+        
+        if (labelName.startsWith('$')) {
+          bountyAmount = label.name;
+          break;
         }
         
         if (!bountyAmount) {
@@ -99,6 +75,27 @@ export async function GET() {
         
         if (bountyAmount) break;
       }
+
+      const bountyData = {
+        id: issue.id,
+        title: issue.title,
+        html_url: issue.html_url,
+        repo: issue.repository_url.split('/').slice(-2).join('/'),
+        user_login: issue.user.login,
+        user_avatar_url: issue.user.avatar_url,
+        created_at: issue.created_at,
+        updated_at: issue.updated_at,
+        comments: issue.comments,
+        labels: issue.labels.map((label: any) => ({
+          name: label.name,
+          color: label.color
+        })),
+        language: await extractLanguageFromRepository(github, issue.repository_url),
+        amount: bountyAmount || null, // Add the bounty amount to the data
+        raw: issue
+      };
+      
+      allBounties.push(bountyData);
       
       if (bountyAmount) {
         totalAmount += parseBountyAmount(bountyAmount);
@@ -109,18 +106,38 @@ export async function GET() {
     const fetchBountiesForQuery = async (query: string, queryType: string) => {
       let page = 1;
       let hasMorePages = true;
+      let queryTotal = 0;
+      
+      console.log(`Starting ${queryType} with query: ${query}`);
       
       while (hasMorePages) {
         console.log(`Fetching ${queryType} page ${page}...`);
         
         const response = await github.searchIssues(query, page, 100);
         
-        if (!response.data.items || response.data.items.length === 0) {
-          hasMorePages = false;
-          break;
+        let issues = response.data.items || [];
+        
+        // Special filtering for antiwork queries
+        if (queryType === "antiwork dollar labels") {
+          const originalCount = issues.length;
+          issues = filterIssuesWithDollarLabels(issues);
+          console.log(`Filtered antiwork issues: ${originalCount} -> ${issues.length} (with $ labels)`);
         }
         
-        for (const issue of response.data.items) {
+        if (!issues || issues.length === 0) {
+          if (queryType === "antiwork dollar labels" && response.data.items.length > 0) {
+            console.log(`No antiwork issues with $ labels found on page ${page}`);
+          }
+          if (response.data.items.length === 0) {
+            hasMorePages = false;
+            break;
+          }
+        }
+        
+        queryTotal += issues.length;
+        console.log(`Found ${issues.length} issues on page ${page} for ${queryType}`);
+        
+        for (const issue of issues) {
           await processIssue(issue);
         }
         
@@ -135,12 +152,14 @@ export async function GET() {
         
         page++;
       }
+      
+      console.log(`Completed ${queryType}: found ${queryTotal} total issues`);
     };
     
     // Fetch all types of bounties
     await fetchBountiesForQuery(bountyQuery, "bounty labels");
     await fetchBountiesForQuery(dollarQuery, "dollar labels");
-    await fetchBountiesForQuery(antiworkQuery, "antiwork organization");
+    await fetchBountiesForQuery(antiworkQuery, "antiwork dollar labels");
     
     // Cache the results in Redis with longer expiration (24 hours)
     await redis.setex("snapshots:latest", 86400, JSON.stringify(allBounties));

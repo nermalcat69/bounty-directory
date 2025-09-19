@@ -17,7 +17,7 @@ export async function POST() {
     // Build search query - include both bounty labels and dollar amount labels
     const bountyQuery = `label:"💎 Bounty" state:open created:>=${cutoffISO}`;
     const dollarQuery = `state:open created:>=${cutoffISO} "$" in:labels`;
-    const antiworkQuery = `org:antiwork state:open created:>=${cutoffISO}`;
+    const antiworkQuery = `org:antiwork state:open created:>=${cutoffISO} "$" in:labels`;
     
     let allBounties: any[] = [];
     let totalAmount = 0;
@@ -146,8 +146,8 @@ export async function POST() {
     // Fetch bounties with dollar amount labels
     await fetchBountiesForQuery(dollarQuery, "dollar labels");
     
-    // Fetch issues from antiwork organization
-    await fetchBountiesForQuery(antiworkQuery, "antiwork organization");
+    // Fetch antiwork bounties with dollar labels
+    await fetchBountiesForQuery(antiworkQuery, "antiwork dollar labels");
     
     // Cache the results in Redis
     await redis.setex("snapshots:latest", 3600, JSON.stringify(allBounties));

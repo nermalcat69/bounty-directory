@@ -3,7 +3,7 @@ import "server-only";
 import { db } from "@/db";
 import { issues, alerts, notifications } from "@/db/schema";
 import { redis } from "./kv";
-import { GitHubAPI, extractRepoFromUrl, extractLanguageFromRepository, type GitHubIssue } from "./github";
+import { GitHubAPI, extractRepoFromUrl, extractLanguageFromRepository, fetchAntiworkBounties, type GitHubIssue } from "./github";
 import { eq, and, sql } from "drizzle-orm";
 
 export class BountyFetcher {
@@ -138,6 +138,49 @@ export class BountyFetcher {
         }
       }
 
+      // Fetch antiwork bounties
+      console.log("Fetching antiwork bounties...");
+      try {
+        const antiworkIssues = await fetchAntiworkBounties(this.github);
+        console.log(`Found ${antiworkIssues.length} antiwork bounties`);
+        
+        for (const issue of antiworkIssues) {
+          const existingIssue = await db.select().from(issues).where(eq(issues.id, issue.id.toString())).limit(1);
+          
+          if (existingIssue.length === 0) {
+            // Extract repository info
+            const repository = extractRepoFromUrl(issue.repository_url);
+            const language = await extractLanguageFromRepository(this.github, issue.repository_url);
+            
+            // Insert new issue
+             await db.insert(issues).values({
+               id: issue.id.toString(),
+               repo: repository,
+               number: issue.number,
+               title: issue.title,
+               body: issue.body || "",
+               html_url: issue.html_url,
+               user_login: issue.user.login,
+               created_at: new Date(issue.created_at),
+               updated_at: new Date(issue.updated_at),
+               labels: JSON.stringify(issue.labels),
+               comments: issue.comments,
+               state: issue.state,
+               assignee: issue.assignee?.login || null,
+               language: language || "Unknown",
+               raw: JSON.stringify(issue),
+             });
+            
+            newIssues++;
+            newIssueIds.push(issue.id.toString());
+          }
+          
+          processed++;
+        }
+      } catch (error) {
+        console.error("Error fetching antiwork bounties:", error);
+      }
+
       // Generate snapshot and cache in Redis
       await this.generateSnapshot();
 
@@ -189,7 +232,14 @@ export class BountyFetcher {
     const top100 = latestBounties.slice(0, 100);
     await redis.setex("snapshots:top100", 3600, JSON.stringify(top100));
 
-    console.log(`Snapshot generated with ${latestBounties.length} issues`);
+    // Invalidate related caches that depend on bounty data
+    await Promise.all([
+      redis.del("bounty:languages"), // Language statistics cache
+      redis.del("bounty:total"),     // Total bounty amount cache
+      redis.del("snapshots:stats")   // Snapshot statistics cache
+    ]);
+
+    console.log(`Snapshot generated with ${latestBounties.length} issues and invalidated dependent caches`);
   }
 
   private async processNotifications(newIssueIds: string[]): Promise<void> {
