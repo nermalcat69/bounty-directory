@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/30min-bounty-update",
+      "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/hourly-total-update", 
+      "schedule": "0 * * * *"
+    }
+  ]
+}

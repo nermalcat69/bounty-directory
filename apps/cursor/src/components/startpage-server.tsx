@@ -2,7 +2,6 @@ import type { Section } from "@directories/data/rules";
 import { type Job } from "./jobs/jobs-featured";
 import { BountiesSectionServer } from "./bounties-section-server";
 import { StartpageClient } from "./startpage-client";
-import { Suspense } from "react";
 
 export async function StartpageServer({
   sections,
@@ -23,13 +22,11 @@ export async function StartpageServer({
     <div>
       <div className="flex flex-col gap-4 w-full relative mx-auto h-screen">
         <div className="transition-all duration-1000">
-          {/* Client-side components for interactivity */}
-          <Suspense fallback={<div>Loading...</div>}>
-            <StartpageClient 
-              totalUsers={totalUsers}
-              totalBountyAmount={totalBountyAmount}
-            />
-          </Suspense>
+          {/* Client-side components for interactivity - no Suspense needed */}
+          <StartpageClient 
+            totalUsers={totalUsers}
+            totalBountyAmount={totalBountyAmount}
+          />
 
           {/* Server-side Bounties Section with ISR cached data */}
           <BountiesSectionServer />

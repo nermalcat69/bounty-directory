@@ -1,10 +1,9 @@
 "use client";
 
-import { motion } from "motion/react";
 import { useQueryState } from "nuqs";
-import { GlobalSearchInput } from "./global-search-input";
 import { HeroTitle } from "./hero-title";
 import { Cursor } from "./ui/cursor";
+import Link from "next/link";
 
 interface StartpageClientProps {
   totalUsers: number;
@@ -19,21 +18,24 @@ export function StartpageClient({
 
   return (
     <>
-      <div
-        className="flex justify-center items-center mb-8"
-        style={{
-          opacity: 0,
-          animation: "fadeIn 0.05s ease forwards",
-        }}
-      >
+      {/* Cursor loads immediately */}
+      <div className="flex justify-center items-center mb-8">
         <Cursor />
       </div>
 
+      {/* Hero with skeleton loading only for bounty amount */}
       <HeroTitle totalUsers={totalUsers} totalBountyAmount={totalBountyAmount} />
 
-      <div className="max-w-[620px] mx-auto w-full mb-14">
-        <GlobalSearchInput />
+      {/* CTA button loads immediately */}
+      <div className=" flex flex-row gap-2 justify-center mb-14">
+        <Link className="bg-neutral-800 hover:bg-neutral-900 duration-200 text-white text-md px-4 py-2 rounded-full" href="/">
+          Learn How to Attempt Issues
+        </Link>
+                <Link className="bg-neutral-800 hover:bg-neutral-900 duration-200 text-white text-md px-4 py-2 rounded-full" href="https://discord.gg/gpRxmW63JW">
+          Join Discord
+        </Link>
       </div>
     </>
   );
 }
+

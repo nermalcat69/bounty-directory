@@ -8,26 +8,36 @@ import { isSpamIssue, logSpamUserFiltered } from "@/utils/spam-filter";
 
 export async function GET() {
   try {
-    const authHeader = process.env.CRON_SECRET;
-    
-    console.log("Starting daily bounty update...");
+    console.log("Starting 30-minute bounty update...");
     
     const github = new GitHubAPI(process.env.GITHUB_TOKEN);
     
-    // Calculate cutoff date (365 days ago to get comprehensive data)
+    // Calculate cutoff date (last 7 days for more frequent updates)
     const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - 365);
+    cutoffDate.setDate(cutoffDate.getDate() - 7);
     const cutoffISO = cutoffDate.toISOString().split('T')[0];
     
-    // Build search queries
-    const bountyQuery = `label:"💎 Bounty" state:open created:>=${cutoffISO}`;
-    const dollarQuery = `state:open created:>=${cutoffISO} "$" in:labels`;
-    const antiworkQuery = `org:antiwork is:issue state:open`; // Broader search, filter labels in code
+    // Build search queries for recent activity
+    const bountyQuery = `label:"💎 Bounty" state:open updated:>=${cutoffISO}`;
+    const dollarQuery = `state:open updated:>=${cutoffISO} "$" in:labels`;
+    const antiworkQuery = `org:antiwork is:issue state:open updated:>=${cutoffISO}`;
     
     let allBounties: any[] = [];
     let totalAmount = 0;
     let processed = 0;
     const seenIssues = new Set<number>();
+    
+    // Get existing cached data to merge with updates
+    let existingBounties: any[] = [];
+    try {
+      const cachedData = await redis.get("snapshots:latest");
+      if (cachedData) {
+        existingBounties = JSON.parse(cachedData);
+        console.log(`Found ${existingBounties.length} existing cached bounties`);
+      }
+    } catch (error) {
+      console.log("No existing cache found, starting fresh");
+    }
     
     // Function to process an issue and extract bounty amount
     const processIssue = async (issue: any) => {
@@ -36,15 +46,15 @@ export async function GET() {
       }
       seenIssues.add(issue.id);
       
-      // Filter out spam users
+      // Filter out spam users first
       if (isSpamIssue(issue)) {
         logSpamUserFiltered(issue.user.login, issue.id);
-        return;
+        return; // Skip spam issues
       }
       
       processed++;
       
-      // Extract bounty amount from labels first
+      // Extract bounty amount from labels
       let bountyAmount = '';
       for (const label of issue.labels) {
         const labelName = label.name.toLowerCase();
@@ -98,7 +108,7 @@ export async function GET() {
           color: label.color
         })),
         language: await extractLanguageFromRepository(github, issue.repository_url),
-        amount: bountyAmount || null, // Add the bounty amount to the data
+        amount: bountyAmount || null,
         raw: issue
       };
       
@@ -109,15 +119,16 @@ export async function GET() {
       }
     };
     
-    // Function to fetch bounties for a query
+    // Function to fetch bounties for a query (limited pages for 30min updates)
     const fetchBountiesForQuery = async (query: string, queryType: string) => {
       let page = 1;
       let hasMorePages = true;
       let queryTotal = 0;
+      const maxPages = 5; // Limit to 5 pages for 30min updates
       
       console.log(`Starting ${queryType} with query: ${query}`);
       
-      while (hasMorePages) {
+      while (hasMorePages && page <= maxPages) {
         console.log(`Fetching ${queryType} page ${page}...`);
         
         const response = await github.searchIssues(query, page, 100);
@@ -132,9 +143,6 @@ export async function GET() {
         }
         
         if (!issues || issues.length === 0) {
-          if (queryType === "antiwork dollar labels" && response.data.items.length > 0) {
-            console.log(`No antiwork issues with $ labels found on page ${page}`);
-          }
           if (response.data.items.length === 0) {
             hasMorePages = false;
             break;
@@ -163,25 +171,45 @@ export async function GET() {
       console.log(`Completed ${queryType}: found ${queryTotal} total issues`);
     };
     
-    // Fetch all types of bounties
+    // Fetch recent bounty updates
     await fetchBountiesForQuery(bountyQuery, "bounty labels");
     await fetchBountiesForQuery(dollarQuery, "dollar labels");
     await fetchBountiesForQuery(antiworkQuery, "antiwork dollar labels");
     
-    // Cache the results in Redis with longer expiration (24 hours)
-    await redis.setex("snapshots:latest", 86400, JSON.stringify(allBounties));
-    await redis.setex("snapshots:top100", 86400, JSON.stringify(allBounties.slice(0, 100)));
+    // Merge with existing data, removing duplicates and updating existing entries
+    const existingBountiesMap = new Map(existingBounties.map(b => [b.id, b]));
     
-    // Cache the total amount separately for quick access
-    const formattedTotal = formatBountyAmount(totalAmount);
-    await redis.setex("bounty:total", 86400, JSON.stringify({
-      amount: totalAmount,
+    // Update existing bounties with new data
+    for (const newBounty of allBounties) {
+      existingBountiesMap.set(newBounty.id, newBounty);
+    }
+    
+    // Convert back to array and sort by updated_at (most recent first)
+    const mergedBounties = Array.from(existingBountiesMap.values())
+      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+    
+    // Calculate total amount from all bounties
+    let finalTotalAmount = 0;
+    for (const bounty of mergedBounties) {
+      if (bounty.amount) {
+        finalTotalAmount += parseBountyAmount(bounty.amount);
+      }
+    }
+    
+    // Cache the merged results with shorter expiration (30 minutes)
+    await redis.setex("snapshots:latest", 1800, JSON.stringify(mergedBounties));
+    await redis.setex("snapshots:top100", 1800, JSON.stringify(mergedBounties.slice(0, 100)));
+    
+    // Cache the total amount
+    const formattedTotal = formatBountyAmount(finalTotalAmount);
+    await redis.setex("bounty:total", 1800, JSON.stringify({
+      amount: finalTotalAmount,
       formatted: formattedTotal,
       lastUpdated: new Date().toISOString(),
-      count: processed
+      count: mergedBounties.length
     }));
     
-    // Revalidate all ISR pages and tags to use fresh data
+    // Revalidate ISR pages and tags
     revalidateTag('bounties');
     revalidateTag('bounty-list');
     revalidateTag('total-bounty-amount');
@@ -189,22 +217,22 @@ export async function GET() {
     revalidatePath('/');
     revalidatePath('/bounties');
     
-    console.log(`Daily bounty update complete: ${processed} bounties, total: ${formattedTotal}`);
+    console.log(`30-minute bounty update complete: ${processed} new/updated bounties, total: ${formattedTotal}`);
     
     return NextResponse.json({
       success: true,
-      message: "Daily bounty update completed successfully",
+      message: "30-minute bounty update completed successfully",
       result: {
-        processed,
-        totalAmount,
+        newOrUpdated: processed,
+        totalBounties: mergedBounties.length,
+        totalAmount: finalTotalAmount,
         formattedTotal,
-        cached: allBounties.length,
         lastUpdated: new Date().toISOString()
       }
     });
 
   } catch (error) {
-    console.error("Error in daily bounty update:", error);
+    console.error("Error in 30-minute bounty update:", error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : String(error),

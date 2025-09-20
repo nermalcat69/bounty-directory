@@ -115,15 +115,16 @@ The webhook endpoint (`/api/webhooks/github`) handles these events:
 
 Even with webhooks configured, the system has fallback mechanisms:
 
-1. **Hourly Cron Job** (`/api/cron/hourly-total-update`)
+1. **30-Minute Cron Job** (`/api/cron/30min-bounty-update`)
+   - Incremental bounty updates every 30 minutes
+   - Merges new data with existing cache
+   - Focuses on recent activity (7-day window)
+   - Ensures fresh bounty data even if webhooks fail
+
+2. **Hourly Cron Job** (`/api/cron/hourly-total-update`)
    - Updates total rewards every hour
    - Runs independently of webhooks
-   - Ensures data freshness even if webhooks fail
-
-2. **Daily Cron Job** (`/api/cron/daily-bounty-update`)
-   - Full data refresh every 24 hours
-   - Rebuilds all caches from scratch
-   - Handles any missed webhook events
+   - Lightweight total amount calculations
 
 ## Testing the Webhook
 

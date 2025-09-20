@@ -15,37 +15,28 @@ export function HeroTitle({
 
   return (
     <div className="text-center mb-8">
-        <h1
-          className="text-[21px] mb-2"
-          style={{
-            opacity: 0,
-            animation: "fadeIn 0.2s ease forwards",
-          }}
-        >
-          {text}
-        </h1>
-        
-        {bountyText && (
-          <h2
-            className="text-[18px] mb-4 text-green-400 font-medium"
-            style={{
-              opacity: 0,
-              animation: "fadeIn 0.2s ease forwards 0.05s",
-            }}
-          >
+      {/* Main title - loads immediately */}
+      <h1 className="text-[21px] mb-2">
+        {text}
+      </h1>
+      
+      {/* Bounty amount - shows skeleton when loading */}
+      <div className="h-[26px] mb-4 flex justify-center items-center">
+        {totalBountyAmount ? (
+          <h2 className="text-[18px] text-green-400 font-medium animate-in fade-in duration-300">
             {bountyText}
           </h2>
+        ) : (
+          <div className="flex items-center space-x-2">
+            <div className="h-[18px] w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+            <span className="text-[18px] text-gray-400">in rewards in open source contributions</span>
+          </div>
         )}
+      </div>
 
-      <p
-        className="text-[#878787] text-sm max-w-[620px] mx-auto"
-        style={{
-          opacity: 0,
-          animation: "fadeIn 0.2s ease forwards 0.1s",
-        }}
-      >
+      {/* Description - loads immediately */}
+      <p className="text-[#878787] text-sm max-w-[620px] mx-auto">
         The home for Open Source enthusiasts where you can find bounties, jobs,{" "}
-
         , post the latest news on the board, learn, connect, and
         discover{" "}
         <Link href="/jobs" className="border-b border-border border-dashed">
@@ -53,16 +44,6 @@ export function HeroTitle({
         </Link>{" "}
         all in one place.
       </p>
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-      `}</style>
     </div>
   );
 }
