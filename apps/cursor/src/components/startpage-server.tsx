@@ -1,13 +1,15 @@
 import { BountiesSectionServer } from "./bounties-section-server";
 import { StartpageClient } from "./startpage-client";
 
+interface StartpageServerProps {
+  totalUsers: number;
+  totalBountyAmount?: string;
+}
+
 export async function StartpageServer({
   totalUsers,
   totalBountyAmount,
-}: {
-  totalUsers: number;
-  totalBountyAmount?: string;
-}) {
+}: StartpageServerProps) {
   return (
     <div>
       <div className="flex flex-col gap-4 w-full relative mx-auto h-screen">
