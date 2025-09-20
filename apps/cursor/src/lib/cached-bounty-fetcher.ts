@@ -73,9 +73,11 @@ const getCachedBountyTotals = unstable_cache(
   async (language?: string): Promise<{ count: number; amount: number; formatted: string }> => {
     const allBounties = await getCachedBountySnapshot();
     
-    // Filter by language if specified
+    // Filter by language if specified (case-insensitive)
     const filteredBounties = language && language !== 'all' 
-      ? allBounties.filter(bounty => bounty.language === language)
+      ? allBounties.filter(bounty => 
+          bounty.language && bounty.language.toLowerCase() === language.toLowerCase()
+        )
       : allBounties;
 
     // Calculate totals
@@ -135,9 +137,11 @@ export const getCachedBounties = unstable_cache(
         };
       }
 
-      // Early filtering by language for performance
+      // Early filtering by language for performance (case-insensitive)
       const filteredBounties = language && language !== 'all' 
-        ? allBounties.filter(bounty => bounty.language === language)
+        ? allBounties.filter(bounty => 
+            bounty.language && bounty.language.toLowerCase() === language.toLowerCase()
+          )
         : allBounties;
 
       // Transform and calculate amounts for all filtered bounties
@@ -275,9 +279,11 @@ export async function fetchBountiesForISR(options: {
 
     const allBounties: BountyItem[] = JSON.parse(cachedBounties);
     
-    // Filter by language if specified
+    // Filter by language if specified (case-insensitive)
     const filteredBounties = language && language !== 'all' 
-      ? allBounties.filter(bounty => bounty.language === language)
+      ? allBounties.filter(bounty => 
+          bounty.language && bounty.language.toLowerCase() === language.toLowerCase()
+        )
       : allBounties;
 
     // Transform and calculate amounts for all filtered bounties

@@ -40,6 +40,7 @@ export function useInfiniteScroll({
   const isLoadingRef = useRef(false);
   
   const handleScroll = useCallback(() => {
+    // Early return if loading, no more items, or already triggered
     if (isLoadingRef.current || !hasMore) return;
 
     const scrollTop = document.documentElement.scrollTop;
@@ -64,7 +65,10 @@ export function useInfiniteScroll({
   );
 
   useEffect(() => {
+    // Only add scroll listener if we have more items to load
+    if (!hasMore) return;
+    
     window.addEventListener('scroll', throttledHandleScroll, { passive: true });
     return () => window.removeEventListener('scroll', throttledHandleScroll);
-  }, [throttledHandleScroll]);
+  }, [throttledHandleScroll, hasMore]);
 }

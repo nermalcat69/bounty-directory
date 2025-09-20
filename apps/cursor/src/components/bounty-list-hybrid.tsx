@@ -141,13 +141,16 @@ export function BountyListHybrid({
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [selectedLanguage, selectedSort, prefetchNextPage]);
+  }, [selectedLanguage, selectedSort, bounties]);
 
   const loadMore = useCallback(() => {
-    if (!loadingMore && hasMore) {
-      fetchBounties(offset, true);
+    // Early return if already loading, no more items, or if we're at the end
+    if (loadingMore || !hasMore || loading) {
+      return;
     }
-  }, [fetchBounties, offset, loadingMore, hasMore]);
+    
+    fetchBounties(offset, true);
+  }, [fetchBounties, offset, loadingMore, hasMore, loading]);
 
   useInfiniteScroll({
     hasMore,
@@ -231,11 +234,11 @@ export function BountyListHybrid({
       </div>
 
       {/* Loading more indicator */}
-      {loadingMore && (
+      {loadingMore && hasMore && (
         <div className="py-8">
-          <div className={`grid ${getGridClasses(selectedLayout, 10)}`}>
-            {Array.from({ length: 10 }).map((_, index) => (
-              <div key={`loading-${index}`} className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500 will-change-transform" style={{ animationDelay: `${index * 50}ms` }}>
+          <div className={`grid ${getGridClasses(selectedLayout, 6)}`}>
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={`loading-${index}`} className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-300 will-change-transform" style={{ animationDelay: `${index * 25}ms` }}>
                 <div className="h-[280px] w-full bg-neutral-950 border border-neutral-800 rounded-lg p-3 animate-pulse">
                   <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4 h-full flex flex-col">
                     <div className="h-6 bg-neutral-800 rounded mb-3 flex-shrink-0"></div>
@@ -252,8 +255,8 @@ export function BountyListHybrid({
       )}
 
       {/* End of results indicator */}
-      {!hasMore && bounties.length > 0 && (
-        <div className="text-center py-8">
+      {!hasMore && bounties.length > 0 && !loadingMore && (
+        <div className="text-center py-8 animate-in fade-in duration-500">
           <p className="text-neutral-500 text-sm">
             You've reached the end of the bounties list
           </p>
