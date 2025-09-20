@@ -1,7 +1,3 @@
-import { Button } from "@/components/ui/button";
-import { ExternalLink, Github, DollarSign, Users, CheckCircle } from "lucide-react";
-import Link from "next/link";
-
 export default function HowToGetListedPage() {
   return (
     <div className="min-h-screen bg-background">

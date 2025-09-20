@@ -11,10 +11,10 @@ import { UserMenu } from "./user-menu";
 const navigationLinks = [
   { href: "/freelance", label: "Freelance" },
   { href: "/jobs", label: "Jobs" },
-  { href: "/how-to-get-listed", label: "Get Listed" },
+  { href: "/faqs", label: "FAQs" },
   { href: "/advertise", label: "Advertise" },
-  { href: "/our-analytics", label: "Our Analytics" },
   { href: "/about", label: "About" },
+  { href: "https://betterstack.com", label: "Status" },
 ] as const;
 
 export function Header() {
