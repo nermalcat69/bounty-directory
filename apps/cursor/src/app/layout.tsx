@@ -87,6 +87,10 @@ export default function RootLayout({
         "whitespace-pre-line antialiased bg-background text-foreground !dark",
       )}
     >
+      <script 
+ defer 
+ src="https://assets.onedollarstats.com/stonks.js"
+></script>
       <body>
         <ThemeProvider
           attribute="class"
