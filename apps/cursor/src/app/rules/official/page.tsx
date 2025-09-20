@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title:
-    "Official Rules from framework and library creators | Cursor Directory",
+    "Official Rules from framework and library creators | Bounty Directory",
   description:
     "Official rules for Cursor from framework and library creators. Find the best rules for your project.",
 };

@@ -5,9 +5,9 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 export const metadata: Metadata = {
-  title: "Post a freelance project | Cursor Directory",
+  title: "Post a freelance project | Bounty Directory",
   description:
-    "Post a freelance project on Cursor Directory for just $19 and connect with skilled developers.",
+    "Post a freelance project on Bounty Directory for just $19 and connect with skilled developers.",
 };
 
 export const dynamic = "force-dynamic";

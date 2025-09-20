@@ -1,8 +1,8 @@
 import Image from "next/image";
 
 export const metadata = {
-  title: "About Cursor Directory",
-  description: "Why we built Cursor Directory",
+  title: "About Bounty Directory",
+  description: "Why we built Bounty Directory",
 };
 
 export default function About() {
@@ -10,7 +10,7 @@ export default function About() {
     <div className="flex flex-col items-center justify-center max-w-screen-md mx-auto px-6 py-12">
       <h1 className="text-4xl mb-12 mt-20 text-center">
         Why We Built <br />
-        Cursor Directory
+        Bounty Directory
       </h1>
 
       <div className="space-y-12 mt-10">

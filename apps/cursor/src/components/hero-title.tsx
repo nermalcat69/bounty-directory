@@ -37,7 +37,7 @@ export function HeroTitle({
       {/* Description - loads immediately */}
       <p className="text-[#878787] text-sm max-w-[620px] mx-auto">
         The home for Open Source enthusiasts where you can find bounties, jobs,{" "}
-        , post the latest news on the board, learn, connect, and
+         post the latest news on the board, learn, connect, and
         discover{" "}
         <Link href="/jobs" className="border-b border-border border-dashed">
           jobs

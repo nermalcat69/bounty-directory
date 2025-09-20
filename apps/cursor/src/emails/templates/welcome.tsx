@@ -33,7 +33,7 @@ export default function WelcomeEmail({
         />
       </Head>
       <Preview>
-        Welcome to Cursor Directory – the home for everything Cursor!
+        Welcome to Bounty Directory – the home for everything Cursor!
       </Preview>
       <Tailwind>
         <Body className="bg-white font-mono">
@@ -43,7 +43,7 @@ export default function WelcomeEmail({
             <Text className="text-xs leading-7 mb-6 font-mono">Hi {name},</Text>
 
             <Text className="text-xs leading-7 pb-2 font-mono">
-              Welcome to Cursor Directory – the home for everything Cursor!
+              Welcome to Bounty Directory – the home for everything Cursor!
             </Text>
 
             <Text className="text-xs leading-7 pb-4 font-mono">
@@ -54,7 +54,7 @@ export default function WelcomeEmail({
             </Text>
 
             <Text className="text-xs leading-7 pb-2 font-mono">
-              Here's what you can do in Cursor Directory:
+              Here's what you can do in Bounty Directory:
             </Text>
 
             <Text className="text-xs font-mono">
@@ -95,7 +95,7 @@ export default function WelcomeEmail({
             </Text>
 
             <Text className="text-xs leading-7 mt-4 font-mono">
-              Cursor Directory is more than just a platform – it's a community.
+              Bounty Directory is more than just a platform – it's a community.
               Connect with like-minded developers, share your knowledge, and be
               part of the movement.
             </Text>

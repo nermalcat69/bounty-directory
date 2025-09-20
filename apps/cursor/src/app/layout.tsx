@@ -15,7 +15,7 @@ import { ThemeProvider } from "next-themes";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 
 export const metadata: Metadata = {
-  title: "Cursor Directory",
+  title: "Bounty Directory",
   description: "Find the best cursor rules for your framework and language",
   icons: [
     {
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     },
   ],
   openGraph: {
-    title: "Cursor Directory",
+    title: "Bounty Directory",
     description: "Find the best cursor rules for your framework and language",
     url: "https://bounty.directory",
     locale: "en_US",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     ],
   },
   twitter: {
-    title: "Cursor Directory",
+    title: "Bounty Directory",
     description: "Find the best cursor rules for your framework and language",
     images: [
       {

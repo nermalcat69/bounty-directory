@@ -4,8 +4,8 @@ import { getFeaturedFreelance } from "@/data/drizzle-queries";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Freelance Projects | Cursor Directory",
-  description: "Find your next freelance project with Cursor Directory",
+  title: "Freelance Projects | Bounty Directory",
+  description: "Find your next freelance project with Bounty Directory",
 };
 
 export const revalidate = 3600;

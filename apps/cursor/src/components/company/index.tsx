@@ -56,7 +56,7 @@ export async function Company({
 
       <div className="my-14 space-y-10 w-full">
         <div className="text-sm text-[#878787] flex justify-between items-center border-t border-border pt-6">
-          <span>Joined Cursor Directory</span>
+          <span>Joined Bounty Directory</span>
           {data?.createdAt ? format(new Date(data.createdAt), "MMM d, yyyy") : "Unknown"}
         </div>
       </div>

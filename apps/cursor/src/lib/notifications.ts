@@ -94,7 +94,7 @@ export class NotificationService {
         timestamp: bounty.created_at,
         footer: {
           text: "Bounty Directory",
-          icon_url: "https://cursor.directory/favicon.ico",
+          icon_url: "https://bounty.directory/favicon.ico",
         },
       };
 
@@ -207,10 +207,10 @@ export class NotificationService {
             <div style="margin: 30px 0; padding: 20px; background: #f9f9f9; border-radius: 6px; text-align: center;">
               <p style="margin: 0; color: #666; font-size: 14px;">
                 You're receiving this because you have an active alert on 
-                <a href="https://cursor.directory" style="color: #0066cc;">Cursor Directory</a>.
+                <a href="https://bounty.directory" style="color: #0066cc;">Bounty Directory</a>.
               </p>
               <p style="margin: 10px 0 0 0; color: #666; font-size: 14px;">
-                <a href="https://cursor.directory/alerts" style="color: #0066cc;">Manage your alerts</a>
+                <a href="https://bounty.directory/alerts" style="color: #0066cc;">Manage your alerts</a>
               </p>
             </div>
           </div>
@@ -230,7 +230,7 @@ export class NotificationService {
       //     'Content-Type': 'application/json',
       //   },
       //   body: JSON.stringify({
-      //     from: 'alerts@cursor.directory',
+      //     from: 'alerts@bounty.directory',
       //     to: email,
       //     subject: emailData.subject,
       //     html: emailData.html,

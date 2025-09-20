@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
 
 export const metadata = {
-  title: "Advertise on Cursor Directory",
+  title: "Advertise on Bounty Directory",
   description:
-    "Reach over 120,000 developers monthly and showcase your product or service on Cursor Directory, the community-driven platform for Cursor AI rules and prompts.",
+    "Reach over 120,000 developers monthly and showcase your product or service on Bounty Directory, the community-driven platform for Cursor AI rules and prompts.",
 };
 
 export default function Advertise() {
@@ -12,7 +12,7 @@ export default function Advertise() {
       <div className="flex flex-col items-center justify-center max-w-screen-md mx-auto px-6 py-12 pb-32">
         <h1 className="text-4xl mb-12 mt-20 text-center">
           Advertise on <br />
-          Cursor Directory
+          Bounty Directory
         </h1>
 
         <div className="space-y-12 mt-10">
@@ -21,7 +21,7 @@ export default function Advertise() {
               Reach an Engaged Developer Audience
             </h2>
             <p className="text-[#878787] leading-relaxed text-sm">
-              Cursor Directory attracts over{" "}
+              Bounty Directory attracts over{" "}
               <a
                 href="https://dashboard.openpanel.dev/share/overview/a5hhbY?range=6m"
                 className="text-primary border-border border-dashed border-b-[1px]"

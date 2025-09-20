@@ -9,9 +9,9 @@ import { redirect } from "next/navigation";
 type Params = Promise<{ id: string }>;
 
 export const metadata: Metadata = {
-  title: "Edit job listing | Cursor Directory",
+  title: "Edit job listing | Bounty Directory",
   description:
-    "Edit a job listing on Cursor Directory and reach 300k+ developers today.",
+    "Edit a job listing on Bounty Directory and reach 300k+ developers today.",
 };
 
 export default async function Page({ params }: { params: Params }) {

@@ -1,22 +1,12 @@
-import type { Section } from "@directories/data/rules";
-import { type Job } from "./jobs/jobs-featured";
 import { BountiesSectionServer } from "./bounties-section-server";
 import { StartpageClient } from "./startpage-client";
 
 export async function StartpageServer({
-  sections,
-  jobs,
   totalUsers,
   totalBountyAmount,
-  members,
-  popularPosts,
 }: {
-  sections: Section[];
-  jobs?: Job[] | null;
   totalUsers: number;
   totalBountyAmount?: string;
-  members: unknown[] | null;
-  popularPosts: unknown[] | null;
 }) {
   return (
     <div>

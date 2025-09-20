@@ -9,7 +9,7 @@ export async function generateMetadata({ params }: { params: Params }) {
   const { data } = await getCompanyProfile(slug);
 
   return {
-    title: `${data?.name}'s Profile | Cursor Directory`,
+    title: `${data?.name}'s Profile | Bounty Directory`,
   };
 }
 

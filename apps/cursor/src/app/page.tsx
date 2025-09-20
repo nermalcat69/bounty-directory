@@ -10,7 +10,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 export const metadata: Metadata = {
-  title: "Cursor Directory - Cursor Rules & Bounties",
+  title: "Bounty Directory - Cursor Rules & Bounties",
   description:
     "Enhance your Cursor with custom rules, discover bounties, and join a community of Cursor enthusiasts.",
 };

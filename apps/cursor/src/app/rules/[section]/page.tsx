@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: { params: Params }) {
   const data = getSectionBySlug(section);
 
   return {
-    title: `Rules for ${data?.tag} | Cursor Directory`,
+    title: `Rules for ${data?.tag} | Bounty Directory`,
     description: `Cursor rules for ${data?.tag}, a collection of rules for Cursor.`,
   };
 }
