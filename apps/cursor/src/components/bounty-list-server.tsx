@@ -1,6 +1,6 @@
 import { BountyCard } from "./bounty-card";
 import { AdCard } from "./ad-card";
-import { fetchBountiesForISR } from "@/lib/server-bounty-fetcher";
+import { fetchBountiesForISR } from "@/lib/cached-bounty-fetcher";
 import { injectAdsIntoBounties, type BountyOrAd } from "@/lib/ad-utils";
 import { ads } from "@/data/ads";
 

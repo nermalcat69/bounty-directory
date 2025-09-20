@@ -9,7 +9,6 @@ import { MobileMenu } from "./mobile-menu";
 import { UserMenu } from "./user-menu";
 
 const navigationLinks = [
-  { href: "/rules", label: "Bounties" },
   { href: "/freelance", label: "Freelance" },
   { href: "/jobs", label: "Jobs" },
   { href: "/how-to-get-listed", label: "Get Listed" },

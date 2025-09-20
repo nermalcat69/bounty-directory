@@ -1,5 +1,5 @@
 import { BountyCard } from "../bounty-card";
-import { fetchBountiesForISR } from "@/lib/server-bounty-fetcher";
+import { fetchBountiesForISR } from "@/lib/cached-bounty-fetcher";
 
 interface BountiesFeaturedServerProps {
   hidePagination?: boolean;

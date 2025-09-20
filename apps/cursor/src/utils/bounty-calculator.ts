@@ -6,11 +6,15 @@ export interface BountyAmount {
 /**
  * Parse a bounty amount string (e.g., "$2k", "$1.5m", "$100") into a numeric value
  */
-export function parseBountyAmount(bountyString: string): number {
-  if (!bountyString) return 0;
+export function parseBountyAmount(bountyString: string | null | undefined): number {
+  if (!bountyString || typeof bountyString !== 'string') {
+    console.warn('parseBountyAmount received non-string input:', bountyString, typeof bountyString);
+    return 0;
+  }
   
-  // Remove $ and convert to lowercase
-  const cleaned = bountyString.replace('$', '').toLowerCase().trim();
+  try {
+    // Remove $ and convert to lowercase
+    const cleaned = bountyString.replace('$', '').toLowerCase().trim();
   
   // Handle k (thousands) and m (millions) suffixes
   if (cleaned.includes('k')) {
@@ -23,8 +27,12 @@ export function parseBountyAmount(bountyString: string): number {
     return number * 1000000;
   }
   
-  // Regular number
-  return parseFloat(cleaned) || 0;
+    // Regular number
+    return parseFloat(cleaned) || 0;
+  } catch (error) {
+    console.error('Error parsing bounty amount:', bountyString, error);
+    return 0;
+  }
 }
 
 /**

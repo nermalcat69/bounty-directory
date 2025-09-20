@@ -95,7 +95,10 @@ export function BountyListHybrid({
           
           let updatedBounties: BountyWithAmount[];
           if (isLoadMore) {
-            updatedBounties = [...bounties, ...newBounties];
+            // Deduplicate bounties by ID to prevent duplicates
+            const existingIds = new Set(bounties.map((b: BountyWithAmount) => b.id));
+            const uniqueNewBounties = newBounties.filter((b: BountyWithAmount) => !existingIds.has(b.id));
+            updatedBounties = [...bounties, ...uniqueNewBounties];
           } else {
             updatedBounties = newBounties;
           }

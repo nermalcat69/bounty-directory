@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Trash2, Plus, Bell, Github, Mail, Webhook } from "lucide-react";
 import { toast } from "sonner";
-import { GithubSignin } from "@/components/github-signin";
+import { GithubSigninWrapper } from "@/components/github-signin-wrapper";
 
 interface Alert {
   id: string;
@@ -188,7 +188,7 @@ export default function AlertsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <GithubSignin />
+              <GithubSigninWrapper />
             </CardContent>
           </Card>
         </div>

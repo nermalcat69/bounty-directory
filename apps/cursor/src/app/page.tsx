@@ -1,11 +1,11 @@
 import { StartpageServer } from "@/components/startpage-server";
 import {
-  getFeaturedJobs,
-  getPopularPosts,
-  getTotalUsers,
-} from "@/data/queries";
-import { getTotalBountyAmountForISR } from "@/lib/server-bounty-fetcher";
-import { getPopularRules } from "@directories/data/popular";
+  getCachedPopularRules,
+  getCachedFeaturedJobs,
+  getCachedTotalUsers,
+  getCachedTotalBountyAmount,
+  getCachedPopularPosts,
+} from "@/data/cached-queries";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
@@ -19,14 +19,14 @@ export const metadata: Metadata = {
 export const revalidate = 300; // Revalidate every 5 minutes
 
 export default async function Page() {
-  const popularRules = await getPopularRules();
+  const popularRules = await getCachedPopularRules();
   
-  const { data: featuredJobsData } = await getFeaturedJobs({
+  const { data: featuredJobsData } = await getCachedFeaturedJobs({
     onlyPremium: true,
   });
 
   // Transform the jobs data to match the Job type expected by Startpage
-  const featuredJobs = featuredJobsData?.map(job => ({
+  const featuredJobs = featuredJobsData?.map((job: any) => ({
     id: job.id,
     title: job.title,
     description: job.description,
@@ -39,10 +39,10 @@ export default async function Page() {
     link: job.link,
   })) || null;
 
-  const { data: totalUsers } = await getTotalUsers();
-  const totalBountyAmount = await getTotalBountyAmountForISR();
+  const { data: totalUsers } = await getCachedTotalUsers();
+  const totalBountyAmount = await getCachedTotalBountyAmount();
 
-  const { data: popularPosts } = await getPopularPosts();
+  const { data: popularPosts } = await getCachedPopularPosts();
 
   return (
     <div className="flex justify-center min-h-screen w-full md:px-0 px-6 mt-[10%]">

@@ -18,6 +18,12 @@ const nextConfig: NextConfig = {
         hostname: 'pub-abe1cd4008f5412abb77357f87d7d7bb.r2.dev',
         port: '',
         pathname: '/**'
+      },
+      {
+        protocol: 'https',
+        hostname: 'midday.ai',
+        port: '',
+        pathname: '/**'
       }
     ]
   },

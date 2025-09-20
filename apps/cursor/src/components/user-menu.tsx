@@ -9,7 +9,7 @@ import { parseAsBoolean } from "nuqs";
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
-import { GithubSignin } from "./github-signin";
+import { GithubSigninWrapper } from "./github-signin-wrapper";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -80,6 +80,9 @@ export function UserMenu() {
                 <DropdownMenuItem asChild>
                   <Link href="/jobs/new">Post a job</Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/freelance/new">Post freelance</Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSignOut}>
                   Sign out
                 </DropdownMenuItem>
@@ -87,7 +90,7 @@ export function UserMenu() {
             </DropdownMenu>
           </div>
         ) : (
-          <GithubSignin />
+          <GithubSigninWrapper />
         )}
       </div>
     );
@@ -132,6 +135,9 @@ export function UserMenu() {
                 <Link href="/jobs/new">Post a job</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
+                <Link href="/freelance/new">Post freelance</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
                 <Link href="/alerts">Alerts</Link>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleSignOut}>
@@ -141,7 +147,7 @@ export function UserMenu() {
           </DropdownMenu>
         </div>
       ) : (
-        <GithubSignin />
+        <GithubSigninWrapper />
       )}
     </motion.div>
   );

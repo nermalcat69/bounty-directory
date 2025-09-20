@@ -3,13 +3,21 @@
 import { signIn } from "@/lib/auth-client";
 import { GithubIcon, Loader2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 
 export function GithubSignin({ redirectTo }: { redirectTo?: string }) {
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? redirectTo ?? "/";
+  const [next, setNext] = useState(redirectTo ?? "/");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Handle search params on client side to avoid hydration mismatch
+  useEffect(() => {
+    const nextParam = searchParams.get("next");
+    if (nextParam) {
+      setNext(nextParam);
+    }
+  }, [searchParams]);
 
   const handleSignIn = async () => {
     setIsLoading(true);

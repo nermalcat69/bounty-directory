@@ -43,6 +43,13 @@
       "when": 1758249620261,
       "tag": "0005_motionless_zombie",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1758331397709,
+      "tag": "0006_square_songbird",
+      "breakpoints": true
     }
   ]
 }

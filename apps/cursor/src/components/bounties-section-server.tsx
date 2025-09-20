@@ -1,5 +1,5 @@
-import { BountyFiltersClient } from "@components/bounty-filters-client";
-import { fetchBountiesForISR } from "@/lib/server-bounty-fetcher";
+import { BountyFiltersClient } from "@/components/bounty-filters-client";
+import { fetchBountiesForISR } from "@/lib/cached-bounty-fetcher";
 
 export async function BountiesSectionServer() {
   try {

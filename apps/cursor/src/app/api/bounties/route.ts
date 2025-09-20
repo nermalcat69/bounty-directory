@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { redis } from "@/lib/kv";
 import { parseBountyAmount, formatBountyAmount } from "@/utils/bounty-calculator";
+import { getCachedBounties } from "@/lib/cached-bounty-fetcher";
 
 interface BountyItem {
   id: string;
@@ -48,265 +49,39 @@ interface BountyResponse {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const mode = searchParams.get('mode') || 'total'; // 'total', 'list', or 'both'
+    
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const sortBy = searchParams.get('sort') || 'amount'; // 'amount', 'created', 'updated'
-    const order = searchParams.get('order') || 'desc'; // 'asc' or 'desc'
-    const language = searchParams.get('language'); // language filter
-    const force = searchParams.get('force') === 'true'; // force refresh cache
-
-    // Generate cache keys based on filters
-    const generateCacheKey = (type: string, filters?: Record<string, any>) => {
-      if (!filters || Object.keys(filters).length === 0) {
-        return `bounty:${type}`;
-      }
-      const filterString = Object.entries(filters)
-        .filter(([_, value]) => value !== null && value !== undefined && value !== 'all')
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([key, value]) => `${key}:${value}`)
-        .join('|');
-      return filterString ? `bounty:${type}:${filterString}` : `bounty:${type}`;
-    };
-
-    // Check if we have cached totals (only skip if force refresh AND requesting total mode)
-    const skipTotalCache = force && mode === 'total';
-    const totalCacheKey = generateCacheKey('total', language ? { language } : {});
-    const cachedTotalData = skipTotalCache ? null : await redis.get(totalCacheKey);
-    let totalData = null;
-    let isCachedTotal = false;
-
-    if (cachedTotalData && !skipTotalCache) {
-      try {
-        const rawTotalData = JSON.parse(cachedTotalData);
-        const cacheAge = Date.now() - new Date(rawTotalData.lastUpdated).getTime();
-        const isValid = cacheAge < 12 * 60 * 60 * 1000; // 12 hours for filtered results
-        
-        if (isValid) {
-          // Normalize the data format (handle both old and new formats)
-          totalData = {
-            count: rawTotalData.count || 0,
-            amount: rawTotalData.amount || 0,
-            formatted: rawTotalData.formatted || "$0",
-            lastUpdated: rawTotalData.lastUpdated
-          };
-          isCachedTotal = true;
-        } else {
-          totalData = null;
-        }
-      } catch (e) {
-        console.error("Error parsing cached total data:", e);
-        totalData = null;
-      }
-    }
-
-    // Get bounties from cache (skip if force refresh)
-    const cachedBounties = force ? null : await redis.get("snapshots:latest");
-    let allBounties: BountyItem[] = [];
-    let isCachedBounties = false;
-
-    if (cachedBounties && !force) {
-      try {
-        allBounties = JSON.parse(cachedBounties);
-        isCachedBounties = true;
-      } catch (e) {
-        allBounties = [];
-      }
-    }
-
-    // Only process bounties if we need to calculate totals or sort (not cached)
-    let bountiesWithAmounts: BountyWithAmount[] = [];
-    let shouldProcessBounties = false;
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50); // Cap at 50 for performance
+    const sort = searchParams.get('sort') || 'amount';
+    const order = searchParams.get('order') || 'desc';
+    const language = searchParams.get('language');
     
-    // Check if we need to process bounties for totals
-    if (!totalData) {
-      shouldProcessBounties = true;
-    }
+    const cachedData = await getCachedBounties({
+      page,
+      limit,
+      sort,
+      order,
+      language: language || undefined,
+    });
     
-    // Check if we need to process bounties for list mode (only check cache key existence, not content)
-    if ((mode === 'list' || mode === 'both') && !force) {
-      const listCacheKey = generateCacheKey('sorted', { 
-        language: language || 'all', 
-        sort: sortBy, 
-        order 
-      });
-      const cacheExists = await redis.exists(listCacheKey);
-      if (!cacheExists) {
-        shouldProcessBounties = true;
-      }
-    }
-    
-    // Only process if needed
-    if (shouldProcessBounties || force) {
-      console.log(`Processing ${allBounties.length} bounties for computation...`);
-      bountiesWithAmounts = allBounties.map(bounty => {
-        const bountyAmount = bounty.amount; // Use the stored amount field
-        const parsedAmount = bountyAmount ? parseBountyAmount(bountyAmount) : 0;
-
-        return {
-          ...bounty,
-          amount: bountyAmount,
-          parsedAmount,
-          // Pre-compute timestamps for faster sorting (handle string dates from Redis)
-          createdTimestamp: new Date(bounty.created_at).getTime(),
-          updatedTimestamp: new Date(bounty.updated_at).getTime()
-        };
-      });
-    } else {
-      console.log("Using cached data, skipping bounty processing");
-    }
-
-    // Calculate totals if not cached
-    if (!totalData) {
-      if (allBounties.length > 0) {
-        // Filter bounties for total calculation if language filter is applied
-        let bountiesForTotal = bountiesWithAmounts;
-        if (language && language !== 'all') {
-          bountiesForTotal = bountiesWithAmounts.filter(bounty => 
-            bounty.language && bounty.language.toLowerCase() === language.toLowerCase()
-          );
-        }
-        
-        // Calculate totals based on filtered bounties
-        const totalAmount = bountiesForTotal.reduce((sum, bounty) => sum + bounty.parsedAmount, 0);
-        const totalCount = bountiesForTotal.length;
-        
-        totalData = {
-          count: totalCount,
-          amount: totalAmount,
-          formatted: formatBountyAmount(totalAmount),
-          lastUpdated: new Date().toISOString()
-        };
-
-        // Cache the calculated totals with appropriate TTL
-        const cacheTTL = language ? 43200 : 86400; // 12 hours for filtered, 24 hours for unfiltered
-        await redis.setex(totalCacheKey, cacheTTL, JSON.stringify(totalData));
-        console.log(`Calculated and cached totals for ${language || 'all languages'}: ${totalCount} bounties, ${formatBountyAmount(totalAmount)}`);
-      } else {
-        // No bounty data available - use fallback totals
-        console.log("No bounty data available, using fallback totals");
-        totalData = {
-          count: 0,
-          amount: 0,
-          formatted: "$0",
-          lastUpdated: new Date().toISOString()
-        };
-      }
-    }
-
-    // Prepare response based on mode
-    const response: BountyResponse = {
+    const jsonResponse = NextResponse.json({
       success: true,
       data: {
-        total: {
-          count: totalData.count,
-          amount: totalData.amount,
-          formatted: totalData.formatted
-        }
+        total: cachedData.total,
+        bounties: cachedData.bounties,
+        pagination: {
+          page,
+          limit,
+          hasMore: cachedData.bounties.length === limit,
+          totalPages: Math.ceil(cachedData.total.count / limit),
+        },
       },
-      cached: isCachedTotal && isCachedBounties,
-      timestamp: new Date().toISOString()
-    };
-
-    // If requesting bounty list or both
-    if (mode === 'list' || mode === 'both') {
-      // Generate cache key for sorted list
-      const listCacheKey = generateCacheKey('sorted', { 
-        language: language || 'all', 
-        sort: sortBy, 
-        order 
-      });
-      
-      let validBounties: BountyWithAmount[] = [];
-      let isListCached = false;
-      
-      // Check for cached sorted list (skip if force refresh)
-      if (!force) {
-        const cachedList = await redis.get(listCacheKey);
-        if (cachedList) {
-          try {
-            const cachedData = JSON.parse(cachedList);
-            const cacheAge = Date.now() - new Date(cachedData.timestamp).getTime();
-            if (cacheAge < 30 * 60 * 1000) { // 30 minutes cache for sorted lists
-              validBounties = cachedData.bounties;
-              isListCached = true;
-              console.log(`Cache HIT: Using cached sorted list for ${language || 'all'} (${sortBy} ${order}) - ${validBounties.length} bounties`);
-            } else {
-              console.log(`Cache EXPIRED: Cached list for ${language || 'all'} (${sortBy} ${order}) is ${Math.round(cacheAge / 60000)} minutes old`);
-            }
-          } catch (e) {
-            console.error("Error parsing cached list:", e);
-          }
-        } else {
-          console.log(`Cache MISS: No cached list found for ${language || 'all'} (${sortBy} ${order})`);
-        }
-      }
-      
-      // If not cached, process and sort bounties
-      if (!isListCached) {
-        // Start with all bounties (don't filter by amount)
-        validBounties = bountiesWithAmounts;
-        
-        // Apply language filter if specified
-        if (language && language !== 'all') {
-          validBounties = validBounties.filter(bounty => 
-            bounty.language && bounty.language.toLowerCase() === language.toLowerCase()
-          );
-        }
-
-        // Sort bounties using pre-computed timestamps for better performance
-        validBounties.sort((a, b) => {
-          let comparison = 0;
-          
-          switch (sortBy) {
-            case 'amount':
-              comparison = b.parsedAmount - a.parsedAmount;
-              break;
-            case 'created':
-              comparison = b.createdTimestamp - a.createdTimestamp;
-              break;
-            case 'updated':
-              comparison = b.updatedTimestamp - a.updatedTimestamp;
-              break;
-            default:
-              comparison = b.parsedAmount - a.parsedAmount;
-          }
-
-          return order === 'asc' ? -comparison : comparison;
-        });
-        
-        // Cache the sorted list for 30 minutes
-        const listCacheData = {
-          bounties: validBounties,
-          timestamp: new Date().toISOString()
-        };
-        await redis.setex(listCacheKey, 1800, JSON.stringify(listCacheData)); // 30 minutes
-        console.log(`Cached sorted list for ${language || 'all'} (${sortBy} ${order}): ${validBounties.length} bounties`);
-      }
-
-      // Paginate
-      const startIndex = (page - 1) * limit;
-      const endIndex = startIndex + limit;
-      const paginatedBounties = validBounties.slice(startIndex, endIndex);
-      const totalPages = Math.ceil(validBounties.length / limit);
-      
-      // Update response cached status
-      response.cached = response.cached && isListCached;
-
-      response.data.bounties = paginatedBounties;
-      response.data.pagination = {
-        page,
-        limit,
-        hasMore: endIndex < validBounties.length,
-        totalPages
-      };
-    }
+      cached: cachedData.cached,
+      timestamp: cachedData.timestamp,
+    });
 
     // Add optimized cache headers for ISR
-    const jsonResponse = NextResponse.json(response);
-    
-    // Use different cache strategies based on data freshness
-    if (response.cached) {
+    if (cachedData.cached) {
       // Data is from cache, allow longer browser cache with stale-while-revalidate
       jsonResponse.headers.set('Cache-Control', 'public, max-age=300, s-maxage=600, stale-while-revalidate=1800');
     } else {
@@ -315,7 +90,7 @@ export async function GET(request: NextRequest) {
     }
     
     jsonResponse.headers.set('Vary', 'Accept-Encoding');
-    jsonResponse.headers.set('X-Cache-Status', response.cached ? 'HIT' : 'MISS');
+    jsonResponse.headers.set('X-Cache-Status', cachedData.cached ? 'HIT' : 'MISS');
     
     return jsonResponse;
 

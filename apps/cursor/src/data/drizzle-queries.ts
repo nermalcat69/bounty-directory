@@ -4,6 +4,7 @@ import {
   posts, 
   companies, 
   jobs, 
+  freelance,
   votes,
   avatars 
 } from "@/db/schema";
@@ -181,6 +182,108 @@ export async function getJobById(jobId: string) {
     .from(jobs)
     .innerJoin(companies, eq(jobs.companyId, companies.id))
     .where(eq(jobs.id, jobId))
+    .limit(1);
+
+  return result[0] || null;
+}
+
+// Freelance queries
+export async function getFeaturedFreelance() {
+  return await db
+    .select({
+      id: freelance.id,
+      title: freelance.title,
+      description: freelance.description,
+      projectType: freelance.projectType,
+      budgetRange: freelance.budgetRange,
+      duration: freelance.duration,
+      skills: freelance.skills,
+      urgency: freelance.urgency,
+      contactEmail: freelance.contactEmail,
+      plan: freelance.plan,
+      createdAt: freelance.createdAt,
+      company: {
+        id: companies.id,
+        name: companies.name,
+        slug: companies.slug,
+        image: companies.image,
+      },
+    })
+    .from(freelance)
+    .innerJoin(companies, eq(freelance.companyId, companies.id))
+    .where(and(eq(freelance.active, true), eq(freelance.plan, "featured")))
+    .orderBy(asc(freelance.order), desc(freelance.createdAt))
+    .limit(10);
+}
+
+export async function getFreelance() {
+  return await db
+    .select({
+      id: freelance.id,
+      title: freelance.title,
+      description: freelance.description,
+      projectType: freelance.projectType,
+      budgetRange: freelance.budgetRange,
+      duration: freelance.duration,
+      skills: freelance.skills,
+      urgency: freelance.urgency,
+      contactEmail: freelance.contactEmail,
+      workplace: freelance.workplace,
+      ownerId: freelance.ownerId,
+      plan: freelance.plan,
+      createdAt: freelance.createdAt,
+      company: {
+        id: companies.id,
+        name: companies.name,
+        slug: companies.slug,
+        image: companies.image,
+      },
+    })
+    .from(freelance)
+    .innerJoin(companies, eq(freelance.companyId, companies.id))
+    .where(eq(freelance.active, true))
+    .orderBy(sql`RANDOM()`)
+    .limit(20);
+}
+
+export async function getFreelanceByCompany(companyId: string) {
+  return await db
+    .select()
+    .from(freelance)
+    .where(and(eq(freelance.companyId, companyId), eq(freelance.active, true)))
+    .orderBy(desc(freelance.createdAt));
+}
+
+export async function getFreelanceById(freelanceId: string) {
+  const result = await db
+    .select({
+      id: freelance.id,
+      title: freelance.title,
+      description: freelance.description,
+      projectType: freelance.projectType,
+      budgetRange: freelance.budgetRange,
+      duration: freelance.duration,
+      skills: freelance.skills,
+      urgency: freelance.urgency,
+      contactEmail: freelance.contactEmail,
+      plan: freelance.plan,
+      createdAt: freelance.createdAt,
+      ownerId: freelance.ownerId,
+      workplace: freelance.workplace,
+      companyId: freelance.companyId,
+      active: freelance.active,
+      company: {
+        id: companies.id,
+        name: companies.name,
+        slug: companies.slug,
+        description: companies.description,
+        website: companies.website,
+        image: companies.image,
+      },
+    })
+    .from(freelance)
+    .innerJoin(companies, eq(freelance.companyId, companies.id))
+    .where(eq(freelance.id, freelanceId))
     .limit(1);
 
   return result[0] || null;

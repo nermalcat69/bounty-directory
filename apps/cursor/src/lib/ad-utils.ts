@@ -30,11 +30,11 @@ export function injectAdsIntoBounties(
   const random = createSeededRandom(seed);
   
   for (let i = 0; i < bounties.length; i++) {
-    // Add the bounty
+    // Add the bounty with unique key that includes position to prevent duplicates
     result.push({
       type: 'bounty',
       data: bounties[i],
-      key: `bounty-${bounties[i].id}`
+      key: `bounty-${bounties[i].id}-${i}`
     });
     
     // More predictable ad injection - only at exact frequency intervals
@@ -48,7 +48,7 @@ export function injectAdsIntoBounties(
       result.push({
         type: 'ad',
         data: randomAd,
-        key: `ad-${randomAd.id}-${i}`
+        key: `ad-${randomAd.id}-${i}-${adsInjected}`
       });
       adsInjected++;
     }

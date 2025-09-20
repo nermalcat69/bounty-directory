@@ -13,15 +13,29 @@ import {
 // Enums
 export const planEnum = pgEnum("plan", ["standard", "featured", "premium"]);
 export const workplaceEnum = pgEnum("workplace", ["On site", "Remote", "Hybrid"]);
+export const projectTypeEnum = pgEnum("project_type", ["Web Development", "Mobile App", "Desktop App", "API Development", "Database Design", "UI/UX Design", "DevOps", "Data Analysis", "Machine Learning", "Other"]);
+export const urgencyEnum = pgEnum("urgency", ["Low", "Medium", "High", "Urgent"]);
+export const budgetRangeEnum = pgEnum("budget_range", ["Under $500", "$500-$1000", "$1000-$2500", "$2500-$5000", "$5000-$10000", "$10000+"]);
 
 // Users table - Better Auth compatible
 export const users = pgTable("users", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
+  hero: text("hero"),
+  status: varchar("status", { length: 255 }),
+  bio: text("bio"),
+  work: varchar("work", { length: 255 }),
+  website: text("website"),
+  slug: varchar("slug", { length: 255 }),
+  socialXLink: text("social_x_link"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  public: boolean("public").default(false),
+  followEmail: boolean("follow_email").default(false),
+  followerCount: integer("follower_count").default(0),
+  followingCount: integer("following_count").default(0),
   updatedAt: timestamp("updated_at")
     .defaultNow()
     .$onUpdate(() => new Date())
@@ -37,7 +51,7 @@ export const companies = pgTable("companies", {
   website: text("website"),
   image: text("image"),
   hero: text("hero"),
-  ownerId: text("owner_id").references(() => users.id),
+  ownerId: uuid("owner_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -47,7 +61,7 @@ export const posts = pgTable("posts", {
   title: varchar("title", { length: 500 }).notNull(),
   content: text("content"),
   url: text("url"),
-  userId: text("user_id").references(() => users.id).notNull(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -67,6 +81,29 @@ export const jobs = pgTable("jobs", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Freelance table
+export const freelance = pgTable("freelance", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: varchar("title", { length: 255 }).notNull(),
+  companyId: uuid("company_id").references(() => companies.id).notNull(),
+  location: varchar("location", { length: 255 }),
+  description: text("description").notNull(),
+  link: text("link"),
+  workplace: workplaceEnum("workplace").notNull(),
+  experience: varchar("experience", { length: 255 }),
+  projectType: projectTypeEnum("project_type").notNull(),
+  budgetRange: budgetRangeEnum("budget_range").notNull(),
+  duration: varchar("duration", { length: 100 }), // e.g., "2-4 weeks", "1-3 months"
+  skills: text("skills"), // Comma-separated skills
+  urgency: urgencyEnum("urgency").default("Medium"),
+  contactEmail: varchar("contact_email", { length: 255 }),
+  plan: planEnum("plan").default("standard"),
+  active: boolean("active").default(true),
+  order: integer("order").default(0),
+  ownerId: uuid("owner_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 
 
 // Follow functionality removed - followers table deleted
@@ -74,7 +111,7 @@ export const jobs = pgTable("jobs", {
 // Votes table
 export const votes = pgTable("votes", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: text("user_id").references(() => users.id).notNull(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
   postId: uuid("post_id").references(() => posts.id).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -110,7 +147,7 @@ export const issues = pgTable("issues", {
 
 export const alerts = pgTable("alerts", {
   id: uuid("id").primaryKey().defaultRandom(),
-  user_id: text("user_id").references(() => users.id),
+  user_id: uuid("user_id").references(() => users.id),
   repo: text("repo"), // either a repo (owner/repo) OR null for global
   query: text("query"), // search query for filtering
   delivery_method: text("delivery_method").notNull(), // 'discord', 'webhook', 'email'
@@ -130,63 +167,13 @@ export const notifications = pgTable("notifications", {
 });
 
 // Better Auth tables
-export const verification = pgTable("verification", {
-  id: text("id").primaryKey(),
-  identifier: text("identifier").notNull(),
-  value: text("value").notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
-});
-
-export const session = pgTable("session", {
-  id: text("id").primaryKey(),
-  expiresAt: timestamp("expires_at").notNull(),
-  token: text("token").notNull().unique(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
-  ipAddress: text("ip_address"),
-  userAgent: text("user_agent"),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-});
-
-export const account = pgTable("account", {
-  id: text("id").primaryKey(),
-  accountId: text("account_id").notNull(),
-  providerId: text("provider_id").notNull(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  accessToken: text("access_token"),
-  refreshToken: text("refresh_token"),
-  idToken: text("id_token"),
-  accessTokenExpiresAt: timestamp("access_token_expires_at"),
-  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
-  scope: text("scope"),
-  password: text("password"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
-});
-
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   posts: many(posts),
   companies: many(companies),
   votes: many(votes),
-  sessions: many(session),
-  accounts: many(account),
   alerts: many(alerts),
+  freelance: many(freelance),
 }));
 
 export const companiesRelations = relations(companies, ({ one, many }) => ({
@@ -195,6 +182,7 @@ export const companiesRelations = relations(companies, ({ one, many }) => ({
     references: [users.id],
   }),
   jobs: many(jobs),
+  freelance: many(freelance),
 }));
 
 export const postsRelations = relations(posts, ({ one, many }) => ({
@@ -209,6 +197,17 @@ export const jobsRelations = relations(jobs, ({ one }) => ({
   company: one(companies, {
     fields: [jobs.companyId],
     references: [companies.id],
+  }),
+}));
+
+export const freelanceRelations = relations(freelance, ({ one }) => ({
+  company: one(companies, {
+    fields: [freelance.companyId],
+    references: [companies.id],
+  }),
+  owner: one(users, {
+    fields: [freelance.ownerId],
+    references: [users.id],
   }),
 }));
 
@@ -227,19 +226,7 @@ export const votesRelations = relations(votes, ({ one }) => ({
   }),
 }));
 
-export const sessionRelations = relations(session, ({ one }) => ({
-  user: one(users, {
-    fields: [session.userId],
-    references: [users.id],
-  }),
-}));
 
-export const accountRelations = relations(account, ({ one }) => ({
-  user: one(users, {
-    fields: [account.userId],
-    references: [users.id],
-  }),
-}));
 
 export const issuesRelations = relations(issues, ({ many }) => ({
   notifications: many(notifications),

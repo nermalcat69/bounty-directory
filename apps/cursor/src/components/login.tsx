@@ -1,6 +1,6 @@
 "use client";
 
-import { GithubSignin } from "./github-signin";
+import { GithubSigninWrapper } from "./github-signin-wrapper";
 
 export function Login({ redirectTo }: { redirectTo?: string }) {
   return (
@@ -12,7 +12,7 @@ export function Login({ redirectTo }: { redirectTo?: string }) {
 
       <div className="mt-10 flex flex-col gap-4">
         <div className="flex flex-col gap-4">
-          <GithubSignin redirectTo={redirectTo} />
+          <GithubSigninWrapper redirectTo={redirectTo} />
         </div>
       </div>
     </div>

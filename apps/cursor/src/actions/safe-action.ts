@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth, syncUserToMainTable } from "@/lib/auth";
 import {
   DEFAULT_SERVER_ERROR_MESSAGE,
   createSafeActionClient,
@@ -44,9 +44,16 @@ export const authActionClient = actionClient.use(async ({ next }) => {
     throw new Error("Session not found!");
   }
 
+  // Sync auth user to main users table and get the main user UUID
+  const mainUserId = await syncUserToMainTable(session.user.id);
+  
+  if (!mainUserId) {
+    throw new Error("Failed to sync user to main table!");
+  }
+
   return next({
     ctx: {
-      userId: session.user.id,
+      userId: mainUserId, // Use the main user UUID instead of auth user text ID
       email: session.user.email,
       name: session.user.name,
     },
