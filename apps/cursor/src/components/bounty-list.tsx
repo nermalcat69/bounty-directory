@@ -199,7 +199,7 @@ export function BountyList({ selectedLanguage, onTotalBountiesChange, selectedSo
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [selectedLanguage, selectedSort, bounties]);
+  }, [selectedLanguage, selectedSort]);
 
   const loadMore = useCallback(() => {
     // Early return if already loading, no more items, or if we're at the end
@@ -218,6 +218,7 @@ export function BountyList({ selectedLanguage, onTotalBountiesChange, selectedSo
   });
 
   useEffect(() => {
+    setBounties([]);
     setOffset(0);
     setHasMore(true);
     fetchBounties(0, false);

@@ -141,7 +141,7 @@ export function BountyListHybrid({
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [selectedLanguage, selectedSort, bounties]);
+  }, [selectedLanguage, selectedSort]);
 
   const loadMore = useCallback(() => {
     // Early return if already loading, no more items, or if we're at the end
@@ -159,14 +159,14 @@ export function BountyListHybrid({
     threshold: 500
   });
 
-  // Reset and fetch when filters change (but not on initial mount if we have initial data)
+  // Reset and fetch when filters change
   useEffect(() => {
-    if (initialBounties.length === 0 || selectedLanguage !== "all" || selectedSort !== "recent") {
-      setOffset(0);
-      setHasMore(true);
-      fetchBounties(0, false);
-    }
-  }, [selectedLanguage, selectedSort, fetchBounties, initialBounties.length]);
+    // Always reset and fetch when language or sort changes
+    setBounties([]);
+    setOffset(0);
+    setHasMore(true);
+    fetchBounties(0, false);
+  }, [selectedLanguage, selectedSort, fetchBounties]);
 
   // Update total bounties when component mounts
   useEffect(() => {
