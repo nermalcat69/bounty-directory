@@ -93,17 +93,16 @@ export function BountyListHybrid({
           const newBounties = data.data.bounties;
           const newItemsCount = newBounties.length;
           
-          let updatedBounties: BountyWithAmount[];
           if (isLoadMore) {
-            // Deduplicate bounties by ID to prevent duplicates
-            const existingIds = new Set(bounties.map((b: BountyWithAmount) => b.id));
-            const uniqueNewBounties = newBounties.filter((b: BountyWithAmount) => !existingIds.has(b.id));
-            updatedBounties = [...bounties, ...uniqueNewBounties];
+            // Use functional state update to avoid dependency on bounties
+            setBounties(prevBounties => {
+              const existingIds = new Set(prevBounties.map((b: BountyWithAmount) => b.id));
+              const uniqueNewBounties = newBounties.filter((b: BountyWithAmount) => !existingIds.has(b.id));
+              return [...prevBounties, ...uniqueNewBounties];
+            });
           } else {
-            updatedBounties = newBounties;
+            setBounties(newBounties);
           }
-          
-          setBounties(updatedBounties);
           
           const totalCount = data.data.total?.count || 0;
           const hasMore = data.data.pagination?.hasMore || false;
@@ -142,7 +141,7 @@ export function BountyListHybrid({
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [selectedLanguage, selectedSort, bounties, prefetchNextPage]);
+  }, [selectedLanguage, selectedSort, prefetchNextPage]);
 
   const loadMore = useCallback(() => {
     if (!loadingMore && hasMore) {
