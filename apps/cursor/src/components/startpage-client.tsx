@@ -1,6 +1,5 @@
 "use client";
 
-import { useQueryState } from "nuqs";
 import { HeroTitle } from "./hero-title";
 import { Cursor } from "./ui/cursor";
 import Link from "next/link";
@@ -14,7 +13,6 @@ export function StartpageClient({
   totalUsers, 
   totalBountyAmount 
 }: StartpageClientProps) {
-  const [search] = useQueryState("q", { defaultValue: "" });
 
   return (
     <>
