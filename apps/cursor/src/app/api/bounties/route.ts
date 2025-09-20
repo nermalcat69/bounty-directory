@@ -9,6 +9,7 @@ interface BountyItem {
   title: string;
   raw?: string; // Redis uses 'raw' instead of 'body'
   html_url: string | undefined;
+  url?: string; // Alternative URL field used in some data sources
   user_login: string;
   user_avatar_url?: string;
   created_at: string; // Redis stores as string, not Date

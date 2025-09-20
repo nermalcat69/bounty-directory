@@ -41,15 +41,19 @@ export async function GET() {
       const bounty = {
         id: issue.id,
         title: issue.title,
-        url: issue.html_url,
+        html_url: issue.html_url,
         repo: issue.repository_url.replace("https://api.github.com/repos/", ""),
+        user_login: issue.user.login,
+        user_avatar_url: issue.user.avatar_url,
         amount: bountyAmount,
         language: language || "Unknown",
-        labels: issue.labels.map((l: any) => l.name),
+        labels: issue.labels.map((label: any) => ({
+          name: label.name,
+          color: label.color
+        })),
         state: issue.state,
         created_at: issue.created_at,
         updated_at: issue.updated_at,
-        user: issue.user.login,
         body: issue.body?.substring(0, 500) || "",
         assignee: issue.assignee?.login || null,
         milestone: issue.milestone?.title || null,

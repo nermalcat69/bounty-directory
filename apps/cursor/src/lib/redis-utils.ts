@@ -6,10 +6,25 @@ import { redis } from "./kv";
  */
 export class RedisUtils {
   /**
-   * Execute a Redis operation with automatic error handling
+   * Ensure Redis is connected before operations
+   */
+  static async ensureConnection(): Promise<void> {
+    if (redis.status !== 'ready') {
+      try {
+        await redis.connect();
+      } catch (error) {
+        console.error('Failed to connect to Redis:', error);
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * Execute a Redis operation with automatic error handling and connection check
    */
   static async execute<T>(operation: () => Promise<T>): Promise<T | null> {
     try {
+      await this.ensureConnection();
       return await operation();
     } catch (error) {
       console.error('Redis operation failed:', error);

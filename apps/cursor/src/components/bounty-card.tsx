@@ -28,12 +28,42 @@ export function BountyCard({ bounty, isPage }: { bounty: BountyWithAmount; isPag
     return count.toString();
   };
 
-  // Construct GitHub URL from repo and extract issue number from html_url or ID
-  const constructGitHubUrl = (): string => {
-    // If we have a valid html_url, trim whitespace and use it
+  // Extract user avatar URL from raw GitHub data
+  const getUserAvatarUrl = (): string => {
+    // First, try to use user_avatar_url if it exists
+    if (bounty.user_avatar_url) {
+      return bounty.user_avatar_url;
+    }
+    
+    // Extract from raw GitHub data if available
+    if (bounty.raw) {
+      try {
+        const rawData = JSON.parse(bounty.raw);
+        if (rawData.user?.avatar_url) {
+          return rawData.user.avatar_url;
+        }
+      } catch (error) {
+        console.warn('Failed to parse raw GitHub data for bounty:', bounty.id, error);
+      }
+    }
+    
+    // Fallback to GitHub avatar URL pattern
+    return `https://github.com/${bounty.user_login}.png`;
+  };
+
+  // Construct GitHub URL from available URL fields or repo info
+  const constructGitHubUrl = (): string | null => {
+    // First, check if we have a valid html_url
     if (bounty.html_url && bounty.html_url.trim() !== '') {
       const trimmedUrl = bounty.html_url.trim();
-      console.log('BountyCard: Using trimmed URL:', trimmedUrl, 'for bounty:', bounty.id);
+      console.log('BountyCard: Using html_url:', trimmedUrl, 'for bounty:', bounty.id);
+      return trimmedUrl;
+    }
+    
+    // Check if we have a url field (common in the current data)
+    if (bounty.url && bounty.url.trim() !== '') {
+      const trimmedUrl = bounty.url.trim();
+      console.log('BountyCard: Using url field:', trimmedUrl, 'for bounty:', bounty.id);
       return trimmedUrl;
     }
     
@@ -46,10 +76,10 @@ export function BountyCard({ bounty, isPage }: { bounty: BountyWithAmount; isPag
       }
     }
     
-    // If no issue number found, try to extract from bounty ID or use repo URL
+    // If no issue number found, return null (no valid URL available)
     if (!issueNumber) {
-      console.log('BountyCard: No issue number found, falling back to repo issues page for bounty:', bounty.id);
-      return `https://github.com/${bounty.repo}/issues`;
+      console.log('BountyCard: No valid URL available for bounty:', bounty.id);
+      return null;
     }
     
     // Construct the full GitHub issue URL
@@ -59,9 +89,14 @@ export function BountyCard({ bounty, isPage }: { bounty: BountyWithAmount; isPag
   };
 
   const githubUrl = constructGitHubUrl();
-  const hasValidUrl = true; // We can always construct a valid URL now
+  const hasValidUrl = githubUrl !== null;
 
   const CardWrapper = ({ children }: { children: React.ReactNode }) => {
+    if (!hasValidUrl) {
+      // Return a non-clickable wrapper when no valid URL is available
+      return <div className="cursor-not-allowed opacity-75">{children}</div>;
+    }
+    
     return (
       <Link href={githubUrl} target="_blank" rel="noopener noreferrer">
         {children}
@@ -82,6 +117,11 @@ export function BountyCard({ bounty, isPage }: { bounty: BountyWithAmount; isPag
               <span className="text-xs text-neutral-400 truncate overflow-hidden">
                 {bounty.repo}
               </span>
+              {!hasValidUrl && (
+                <span className="text-xs text-orange-400 bg-orange-900/30 border border-orange-700/50 px-1 py-0.5 rounded text-[10px]">
+                  No URL
+                </span>
+              )}
             </div>
             <div className="flex items-center space-x-2">
               {bounty.amount && (
@@ -125,7 +165,7 @@ export function BountyCard({ bounty, isPage }: { bounty: BountyWithAmount; isPag
           <div className="flex items-center justify-between pt-3 border-t border-neutral-700 h-8 flex-shrink-0">
             <div className="flex items-center space-x-2 min-w-0 flex-1">
               <Avatar className="w-5 h-5 flex-shrink-0">
-                <img src={`https://github.com/${bounty.user_login}.png`} alt={bounty.user_login} />
+                <img src={getUserAvatarUrl()} alt={bounty.user_login} />
               </Avatar>
               <span className="text-xs text-neutral-400 truncate overflow-hidden">{bounty.user_login}</span>
             </div>

@@ -4,7 +4,7 @@
  */
 
 import { unstable_cache } from "next/cache";
-import { redis } from "@/lib/kv";
+import { RedisUtils } from "@/lib/redis-utils";
 import { parseBountyAmount, formatBountyAmount } from "@/utils/bounty-calculator";
 import type { BountyWithAmount } from "@/app/api/bounties/route";
 
@@ -14,6 +14,7 @@ interface BountyItem {
   title: string;
   raw?: string;
   html_url: string | undefined;
+  url?: string; // Alternative URL field used in some data sources
   user_login: string;
   user_avatar_url?: string;
   created_at: string;
@@ -43,21 +44,32 @@ const CACHE_TTL = {
 };
 
 // Helper function to extract amount from labels
-function extractAmountFromLabels(labelsString: string | null | undefined): string | null {
-  // Handle null, undefined, or empty string cases
-  if (!labelsString || typeof labelsString !== 'string') {
+function extractAmountFromLabels(labelsData: string | null | undefined | any[]): string | null {
+  if (!labelsData) {
     return null;
   }
 
   try {
-    const labels = JSON.parse(labelsString || '[]');
+    let labels: any[] = [];
+    
+    // Handle different label formats
+    if (typeof labelsData === 'string') {
+      labels = JSON.parse(labelsData || '[]');
+    } else if (Array.isArray(labelsData)) {
+      labels = labelsData;
+    } else {
+      return null;
+    }
     
     // Ensure labels is an array
     if (!Array.isArray(labels)) {
       return null;
     }
     
-    for (const labelName of labels) {
+    for (const label of labels) {
+      // Handle both string labels and object labels with name property
+      const labelName = typeof label === 'string' ? label : label?.name;
+      
       // Ensure labelName is a string
       if (typeof labelName !== 'string') {
         continue;
@@ -96,7 +108,7 @@ function extractAmountFromLabels(labelsString: string | null | undefined): strin
       }
     }
   } catch (error) {
-    console.error('Error parsing labels:', error, 'Input:', labelsString);
+    console.error('Error parsing labels:', error, 'Input:', labelsData);
   }
   
   return null;
@@ -107,7 +119,7 @@ function extractAmountFromLabels(labelsString: string | null | undefined): strin
  */
 const getCachedBountySnapshot = unstable_cache(
   async (): Promise<BountyItem[]> => {
-    const cachedBounties = await redis.get("snapshots:latest");
+    const cachedBounties = await RedisUtils.get("snapshots:latest");
     if (!cachedBounties) {
       return [];
     }
@@ -332,7 +344,7 @@ export async function fetchBountiesForISR(options: {
 
   try {
     // Get bounties directly from Redis without Next.js caching for ISR
-    const cachedBounties = await redis.get("snapshots:latest");
+    const cachedBounties = await RedisUtils.get("snapshots:latest");
     if (!cachedBounties) {
       return {
         bounties: [],
