@@ -9,24 +9,24 @@ export const polar = new Polar({
 export const PRODUCTS_PRODUCTION = {
   jobs: {
     standard: {
-      id: "4ca0256a-62c8-4110-8aaf-b27e7d96b6cb",
+      id: process.env.POLAR_JOB_STANDARD_ID || "4ca0256a-62c8-4110-8aaf-b27e7d96b6cb",
       name: "Standard Job Listing",
       price: 99,
     },
     featured: {
-      id: "4504bcd0-576c-423f-959c-9ce4ae1ae685",
+      id: process.env.POLAR_JOB_FEATURED_ID || "4504bcd0-576c-423f-959c-9ce4ae1ae685",
       name: "Featured Job Listing",
       price: 299,
     },
     premium: {
-      id: "c39ab0dd-f9c4-4e0d-bd37-a722e490b1b8",
+      id: process.env.POLAR_JOB_PREMIUM_ID || "c39ab0dd-f9c4-4e0d-bd37-a722e490b1b8",
       name: "Premium Job Listing",
       price: 999,
     },
   },
   subscriptions: {
     alerts_monthly: {
-      id: "REPLACE_WITH_ACTUAL_PRODUCT_ID", // TODO: Replace with actual Polar product ID
+      id: process.env.POLAR_SUBSCRIPTION_ALERTS_ID || "REPLACE_WITH_ACTUAL_PRODUCT_ID",
       name: "Alert Subscription",
       price: 3,
     },
@@ -53,7 +53,7 @@ export const PRODUCTS_SANDBOX = {
   },
   subscriptions: {
     alerts_monthly: {
-      id: "REPLACE_WITH_ACTUAL_SANDBOX_PRODUCT_ID", // TODO: Replace with actual Polar sandbox product ID
+      id: "REPLACE_WITH_ACTUAL_SANDBOX_PRODUCT_ID", // TODO: Replace with actual Polar sandbox product ID from dashboard
       name: "Alert Subscription",
       price: 3,
     },
