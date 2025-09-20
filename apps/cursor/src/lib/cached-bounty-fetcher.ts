@@ -42,6 +42,51 @@ const CACHE_TTL = {
   BOUNTY_SNAPSHOT: 60 * 10, // 10 minutes for full snapshot (reduced for fresher data)
 };
 
+// Helper function to extract amount from labels
+function extractAmountFromLabels(labelsString: string): string | null {
+  try {
+    const labels = JSON.parse(labelsString || '[]');
+    
+    for (const labelName of labels) {
+      const priorityPatterns = [
+        /\$(\d+(?:\.\d+)?[km]?)/i,
+        /(\d+(?:\.\d+)?[km]?)\s*usd/i,
+        /(\d+(?:\.\d+)?[km]?)\s*dollars?/i,
+        /bounty[:\s]*\$?(\d+(?:\.\d+)?[km]?)/i,
+        /reward[:\s]*\$?(\d+(?:\.\d+)?[km]?)/i,
+        /prize[:\s]*\$?(\d+(?:\.\d+)?[km]?)/i
+      ];
+      
+      for (const pattern of priorityPatterns) {
+        const match = labelName.match(pattern);
+        if (match) {
+          return `$${match[1]}`;
+        }
+      }
+      
+      const numberMatch = labelName.match(/(\d+(?:\.\d+)?[km]?)/i);
+      if (numberMatch) {
+        const value = numberMatch[1].toLowerCase();
+        const numericPart = parseFloat(value.replace(/[km]/i, ''));
+        const hasK = value.includes('k');
+        const hasM = value.includes('m');
+        
+        let baseNumber = numericPart;
+        if (hasK) baseNumber *= 1000;
+        if (hasM) baseNumber *= 1000000;
+        
+        if (baseNumber >= 1 && baseNumber <= 100000000) {
+          return `$${value}`;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error parsing labels:', error);
+  }
+  
+  return null;
+}
+
 /**
  * Cached function to get bounty snapshot from Redis
  */
@@ -85,7 +130,8 @@ const getCachedBountyTotals = unstable_cache(
     let validBounties = 0;
 
     for (const bounty of filteredBounties) {
-      const amount = bounty.amount ? parseBountyAmount(bounty.amount) : 0;
+      const extractedAmount = extractAmountFromLabels(bounty.labels);
+      const amount = extractedAmount ? parseBountyAmount(extractedAmount) : 0;
       if (amount > 0) {
         totalAmount += amount;
         validBounties++;
@@ -101,12 +147,12 @@ const getCachedBountyTotals = unstable_cache(
   ["bounty-totals"],
   {
     revalidate: CACHE_TTL.BOUNTY_TOTAL,
-    tags: ["bounty-totals", "bounties", "total-bounty-amount"],
+    tags: ["bounty-totals", "bounties"],
   }
 );
 
 /**
- * Cached function to get paginated bounties
+ * Cached function to get bounties with pagination and filtering
  */
 export const getCachedBounties = unstable_cache(
   async (options: {
@@ -145,40 +191,44 @@ export const getCachedBounties = unstable_cache(
         : allBounties;
 
       // Transform and calculate amounts for all filtered bounties
-      // Note: We need to process all bounties to ensure proper sorting and pagination
-       const bountiesWithAmounts: BountyWithAmount[] = filteredBounties.map(bounty => {
-          const parsedAmount = bounty.amount ? parseBountyAmount(bounty.amount) : 0;
+      const bountiesWithAmounts: BountyWithAmount[] = filteredBounties.map(bounty => {
+        const extractedAmount = extractAmountFromLabels(bounty.labels);
+        const parsedAmount = extractedAmount ? parseBountyAmount(extractedAmount) : 0;
+        
         return {
           ...bounty,
-          amount: bounty.amount,
+          amount: extractedAmount,
           parsedAmount,
           createdTimestamp: new Date(bounty.created_at).getTime(),
           updatedTimestamp: new Date(bounty.updated_at).getTime(),
-          user_avatar_url: bounty.user_avatar_url || `https://github.com/${bounty.user_login}.png`,
         };
       });
 
       // Sort bounties
       const sortedBounties = bountiesWithAmounts.sort((a, b) => {
+        let comparison = 0;
+        
         switch (sort) {
           case 'amount':
-            return order === 'desc' ? b.parsedAmount - a.parsedAmount : a.parsedAmount - b.parsedAmount;
-          case 'created':
-            const aCreatedDate = new Date(a.created_at).getTime();
-            const bCreatedDate = new Date(b.created_at).getTime();
-            return order === 'desc' ? bCreatedDate - aCreatedDate : aCreatedDate - bCreatedDate;
+            comparison = (a.parsedAmount || 0) - (b.parsedAmount || 0);
+            break;
           case 'updated':
-            const aUpdatedDate = new Date(a.updated_at).getTime();
-            const bUpdatedDate = new Date(b.updated_at).getTime();
-            return order === 'desc' ? bUpdatedDate - aUpdatedDate : aUpdatedDate - bUpdatedDate;
+            comparison = a.updatedTimestamp - b.updatedTimestamp;
+            break;
+          case 'created':
+            comparison = a.createdTimestamp - b.createdTimestamp;
+            break;
           case 'comments':
-            return order === 'desc' ? b.comments - a.comments : a.comments - b.comments;
+            comparison = a.comments - b.comments;
+            break;
           default:
-            return 0;
+            comparison = (a.parsedAmount || 0) - (b.parsedAmount || 0);
         }
+        
+        return order === 'desc' ? -comparison : comparison;
       });
 
-      // Paginate
+      // Paginate results
       const startIndex = (page - 1) * limit;
       const endIndex = startIndex + limit;
       const paginatedBounties = sortedBounties.slice(startIndex, endIndex);
@@ -288,48 +338,55 @@ export async function fetchBountiesForISR(options: {
 
     // Transform and calculate amounts for all filtered bounties
     const bountiesWithAmounts: BountyWithAmount[] = filteredBounties.map(bounty => {
-      const parsedAmount = bounty.amount ? parseBountyAmount(bounty.amount) : 0;
+      // Extract amount from labels using the helper function
+      const extractedAmount = extractAmountFromLabels(bounty.labels);
+      const parsedAmount = extractedAmount ? parseBountyAmount(extractedAmount) : 0;
+      
       return {
         ...bounty,
-        amount: bounty.amount,
+        amount: extractedAmount,
         parsedAmount,
         createdTimestamp: new Date(bounty.created_at).getTime(),
         updatedTimestamp: new Date(bounty.updated_at).getTime(),
-        user_avatar_url: bounty.user_avatar_url || `https://github.com/${bounty.user_login}.png`,
       };
     });
 
     // Sort bounties
     const sortedBounties = bountiesWithAmounts.sort((a, b) => {
+      let comparison = 0;
+      
       switch (sort) {
         case 'amount':
-          return order === 'desc' ? b.parsedAmount - a.parsedAmount : a.parsedAmount - b.parsedAmount;
-        case 'created':
-          const aCreatedDate = new Date(a.created_at).getTime();
-          const bCreatedDate = new Date(b.created_at).getTime();
-          return order === 'desc' ? bCreatedDate - aCreatedDate : aCreatedDate - bCreatedDate;
+          comparison = (a.parsedAmount || 0) - (b.parsedAmount || 0);
+          break;
         case 'updated':
-          const aUpdatedDate = new Date(a.updated_at).getTime();
-          const bUpdatedDate = new Date(b.updated_at).getTime();
-          return order === 'desc' ? bUpdatedDate - aUpdatedDate : aUpdatedDate - bUpdatedDate;
+          comparison = a.updatedTimestamp - b.updatedTimestamp;
+          break;
+        case 'created':
+          comparison = a.createdTimestamp - b.createdTimestamp;
+          break;
         case 'comments':
-          return order === 'desc' ? b.comments - a.comments : a.comments - b.comments;
+          comparison = a.comments - b.comments;
+          break;
         default:
-          return 0;
+          comparison = (a.parsedAmount || 0) - (b.parsedAmount || 0);
       }
+      
+      return order === 'desc' ? -comparison : comparison;
     });
 
-    // Paginate
+    // Paginate results
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
     const paginatedBounties = sortedBounties.slice(startIndex, endIndex);
 
-    // Calculate totals
+    // Calculate totals for filtered bounties
     let totalAmount = 0;
     let validBounties = 0;
 
     for (const bounty of filteredBounties) {
-      const amount = bounty.amount ? parseBountyAmount(bounty.amount) : 0;
+      const extractedAmount = extractAmountFromLabels(bounty.labels);
+      const amount = extractedAmount ? parseBountyAmount(extractedAmount) : 0;
       if (amount > 0) {
         totalAmount += amount;
         validBounties++;

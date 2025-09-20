@@ -12,18 +12,15 @@ function createRedisInstance(): Redis {
     maxRetriesPerRequest: 2, // Reduced retries
     enableReadyCheck: true,
     lazyConnect: true, // Only connect when needed
-    commandTimeout: 8000, // Reduced timeout
-    enableOfflineQueue: true, // Allow queuing when disconnected
+    commandTimeout: 10000, // Reduced timeout
+    enableOfflineQueue: false, // Prevent memory leaks
     
     // Connection pool settings optimized for free tier
     family: 4, // Use IPv4
     keepAlive: 30000, // Keep connections alive for 30s
     
     // Connection limits for free tier
-    connectTimeout: 8000,
-    
-    // Disable auto pipelining to reduce connection overhead
-    enableAutoPipelining: false,
+    connectTimeout: 10000,
   });
 }
 

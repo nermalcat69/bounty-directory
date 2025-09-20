@@ -4,7 +4,6 @@ import { alerts } from "@/db/schema";
 import { getSession } from "@/lib/auth-server";
 import { eq, and, isNull } from "drizzle-orm";
 import { z } from "zod";
-import { canCreateAlerts } from "@/lib/subscription";
 
 // Validation schemas
 const createAlertSchema = z.object({
@@ -53,15 +52,6 @@ export async function POST(request: NextRequest) {
     const session = await getSession();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check if user can create alerts (subscription check)
-    const canCreate = await canCreateAlerts(session.user.id);
-    if (!canCreate) {
-      return NextResponse.json(
-        { error: "You need an active subscription to create alerts" },
-        { status: 403 }
-      );
     }
 
     const body = await request.json();

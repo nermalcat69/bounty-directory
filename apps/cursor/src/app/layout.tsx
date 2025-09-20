@@ -15,7 +15,6 @@ import { PlusIcon } from "lucide-react";
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
-import Script from "next/script";
 
 export const metadata: Metadata = {
   title: "Bounty Directory",
@@ -88,11 +87,11 @@ export default function RootLayout({
         "whitespace-pre-line antialiased bg-background text-foreground !dark",
       )}
     >
+      <script 
+ defer 
+ src="https://assets.onedollarstats.com/stonks.js"
+></script>
       <body>
-        <Script
-          src="https://assets.onedollarstats.com/stonks.js"
-          strategy="afterInteractive"
-        />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
