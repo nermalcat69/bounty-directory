@@ -28,24 +28,53 @@ export function BountyCard({ bounty, isPage }: { bounty: BountyWithAmount; isPag
     return count.toString();
   };
 
+  // Construct GitHub URL from repo and extract issue number from html_url or ID
+  const constructGitHubUrl = (): string => {
+    // If we have a valid html_url, trim whitespace and use it
+    if (bounty.html_url && bounty.html_url.trim() !== '') {
+      const trimmedUrl = bounty.html_url.trim();
+      console.log('BountyCard: Using trimmed URL:', trimmedUrl, 'for bounty:', bounty.id);
+      return trimmedUrl;
+    }
+    
+    // Extract issue number from html_url if it exists but is malformed
+    let issueNumber: string | null = null;
+    if (bounty.html_url) {
+      const match = bounty.html_url.match(/\/issues\/(\d+)/);
+      if (match) {
+        issueNumber = match[1];
+      }
+    }
+    
+    // If no issue number found, try to extract from bounty ID or use repo URL
+    if (!issueNumber) {
+      console.log('BountyCard: No issue number found, falling back to repo issues page for bounty:', bounty.id);
+      return `https://github.com/${bounty.repo}/issues`;
+    }
+    
+    // Construct the full GitHub issue URL
+    const constructedUrl = `https://github.com/${bounty.repo}/issues/${issueNumber}`;
+    console.log('BountyCard: Constructed URL:', constructedUrl, 'for bounty:', bounty.id);
+    return constructedUrl;
+  };
+
+  const githubUrl = constructGitHubUrl();
+  const hasValidUrl = true; // We can always construct a valid URL now
+
+  const CardWrapper = ({ children }: { children: React.ReactNode }) => {
+    return (
+      <Link href={githubUrl} target="_blank" rel="noopener noreferrer">
+        {children}
+      </Link>
+    );
+  };
+
   return (
-    <Link 
-      href={bounty.html_url} 
-      target="_blank" 
-      rel="noopener noreferrer"
-      className="block"
-    >
+    <CardWrapper>
       <Card
-        className={cn(
-          "bg-neutral-950 border-neutral-800 p-3 h-[280px] w-full cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.01] hover:border-neutral-700",
-        )}
+        className="bg-neutral-950 border-neutral-800 p-3 h-[280px] w-full transition-all duration-200 cursor-pointer hover:shadow-lg hover:scale-[1.01] hover:border-neutral-700"
       >
-        <CardContent
-          className={cn(
-            "bg-neutral-900 border border-neutral-800 rounded-lg p-4 text-sm opacity-70 hover:opacity-100 transition-opacity group relative h-full flex flex-col",
-            isPage && "opacity-100",
-          )}
-        >
+        <CardContent className="bg-neutral-900 border border-neutral-800 rounded-lg p-4 text-sm transition-opacity group relative h-full flex flex-col opacity-70 hover:opacity-100">
           {/* Header with repository info and bounty amount - Fixed height */}
           <div className="flex items-center justify-between mb-3 h-6 flex-shrink-0">
             <div className="flex items-center space-x-2 min-w-0 flex-1">
@@ -106,7 +135,7 @@ export function BountyCard({ bounty, isPage }: { bounty: BountyWithAmount; isPag
           </div>
       </CardContent>
     </Card>
-    </Link>
+    </CardWrapper>
   );
 }
 

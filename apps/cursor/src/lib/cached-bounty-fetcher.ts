@@ -13,12 +13,12 @@ interface BountyItem {
   repo: string;
   title: string;
   raw?: string;
-  html_url: string;
+  html_url: string | undefined;
   user_login: string;
   user_avatar_url?: string;
   created_at: string;
   updated_at: string;
-  labels: string;
+  labels: string | null;
   comments: number;
   language: string | null;
   amount: string | null;
@@ -43,11 +43,26 @@ const CACHE_TTL = {
 };
 
 // Helper function to extract amount from labels
-function extractAmountFromLabels(labelsString: string): string | null {
+function extractAmountFromLabels(labelsString: string | null | undefined): string | null {
+  // Handle null, undefined, or empty string cases
+  if (!labelsString || typeof labelsString !== 'string') {
+    return null;
+  }
+
   try {
     const labels = JSON.parse(labelsString || '[]');
     
+    // Ensure labels is an array
+    if (!Array.isArray(labels)) {
+      return null;
+    }
+    
     for (const labelName of labels) {
+      // Ensure labelName is a string
+      if (typeof labelName !== 'string') {
+        continue;
+      }
+
       const priorityPatterns = [
         /\$(\d+(?:\.\d+)?[km]?)/i,
         /(\d+(?:\.\d+)?[km]?)\s*usd/i,
@@ -81,7 +96,7 @@ function extractAmountFromLabels(labelsString: string): string | null {
       }
     }
   } catch (error) {
-    console.error('Error parsing labels:', error);
+    console.error('Error parsing labels:', error, 'Input:', labelsString);
   }
   
   return null;

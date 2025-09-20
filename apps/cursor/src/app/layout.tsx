@@ -15,6 +15,7 @@ import { PlusIcon } from "lucide-react";
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Bounty Directory",
@@ -87,11 +88,12 @@ export default function RootLayout({
         "whitespace-pre-line antialiased bg-background text-foreground !dark",
       )}
     >
-      <script 
- defer 
- src="https://assets.onedollarstats.com/stonks.js"
-></script>
       <body>
+        <script 
+          defer 
+          src="https://assets.onedollarstats.com/stonks.js"
+        />
+        
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -105,32 +107,33 @@ export default function RootLayout({
             <Header />
             {children}
 
-            <a
-              href="https://github.com/pontusab/bounty.directory"
-              target="_blank"
-              rel="noreferrer"
+            <Button
+              asChild
+              className="hidden size-[48px] bg-[#F5F5F3]/30 text-black border border-black rounded-full font-medium fixed bottom-4 left-6 z-10 backdrop-blur-lg dark:bg-[#F5F5F3]/30 dark:text-white dark:border-white"
+              variant="outline"
+              size="icon"
             >
-              <Button
-                className="hidden size-[48px] bg-[#F5F5F3]/30 text-black border border-black rounded-full font-medium fixed bottom-4 left-6 z-10 backdrop-blur-lg dark:bg-[#F5F5F3]/30 dark:text-white dark:border-white"
-                variant="outline"
-                size="icon"
+              <Link
+                href="https://github.com/pontusab/bounty.directory"
+                target="_blank"
+                rel="noreferrer"
               >
                 <PlusIcon className="w-4 h-4" />
-              </Button>
-            </a>
+              </Link>
+            </Button>
 
             <Banner />
             <Toaster />
             <GlobalModals />
           </NuqsAdapter>
         </ThemeProvider>
-      </body>
 
-      <OpenPanelComponent
-        clientId={process.env.NEXT_PUBLIC_OPENPANEL_CLIENT_ID!}
-        trackScreenViews
-        disabled={process.env.NODE_ENV === "development"}
-      />
+        <OpenPanelComponent
+          clientId={process.env.NEXT_PUBLIC_OPENPANEL_CLIENT_ID!}
+          trackScreenViews
+          disabled={process.env.NODE_ENV === "development"}
+        />
+      </body>
     </html>
   );
 }

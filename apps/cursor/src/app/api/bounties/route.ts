@@ -8,12 +8,12 @@ interface BountyItem {
   repo: string;
   title: string;
   raw?: string; // Redis uses 'raw' instead of 'body'
-  html_url: string;
+  html_url: string | undefined;
   user_login: string;
   user_avatar_url?: string;
   created_at: string; // Redis stores as string, not Date
   updated_at: string; // Redis stores as string, not Date
-  labels: string;
+  labels: string | null;
   comments: number;
   language: string | null;
   amount: string | null;
