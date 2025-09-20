@@ -28,8 +28,8 @@ export function StartpageClient({
 
       {/* CTA button loads immediately */}
       <div className=" flex flex-row gap-2 justify-center mb-14">
-        <Link className="bg-neutral-800 hover:bg-neutral-900 duration-200 text-white text-md px-4 py-2 rounded-full" href="/">
-          Learn How to Attempt Issues
+        <Link className="bg-neutral-800 hover:bg-neutral-900 duration-200 text-white text-md px-4 py-2 rounded-full" href="/how-to-attempt-issues">
+          How to Attempt Issues
         </Link>
                 <Link className="bg-neutral-800 hover:bg-neutral-900 duration-200 text-white text-md px-4 py-2 rounded-full" href="https://discord.gg/gpRxmW63JW">
           Join Discord
