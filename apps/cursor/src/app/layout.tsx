@@ -5,6 +5,8 @@ import { GlobalModals } from "@/components/modals/global-modals";
 import { UserSync } from "@/components/user-sync";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
+import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { cn } from "@/lib/utils";
 import { OpenPanelComponent } from "@openpanel/nextjs";
 import { GeistMono } from "geist/font/mono";
@@ -92,6 +94,8 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <SpeedInsights />
+          <Analytics />
           <NuqsAdapter>
             <UserSync />
             <Header />

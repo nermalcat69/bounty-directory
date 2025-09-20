@@ -16,6 +16,7 @@ export const workplaceEnum = pgEnum("workplace", ["On site", "Remote", "Hybrid"]
 export const projectTypeEnum = pgEnum("project_type", ["Web Development", "Mobile App", "Desktop App", "API Development", "Database Design", "UI/UX Design", "DevOps", "Data Analysis", "Machine Learning", "Other"]);
 export const urgencyEnum = pgEnum("urgency", ["Low", "Medium", "High", "Urgent"]);
 export const budgetRangeEnum = pgEnum("budget_range", ["Under $500", "$500-$1000", "$1000-$2500", "$2500-$5000", "$5000-$10000", "$10000+"]);
+export const subscriptionStatusEnum = pgEnum("subscription_status", ["active", "canceled", "past_due", "incomplete", "trialing"]);
 
 // Users table - Better Auth compatible
 export const users = pgTable("users", {
@@ -166,6 +167,20 @@ export const notifications = pgTable("notifications", {
   error_message: text("error_message"),
 });
 
+// Subscriptions table for alert subscriptions
+export const subscriptions = pgTable("subscriptions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  user_id: uuid("user_id").references(() => users.id).notNull(),
+  plan_type: text("plan_type").notNull().default("alerts_monthly"), // alerts_monthly for $3/month
+  status: subscriptionStatusEnum("status").notNull().default("incomplete"),
+  polar_subscription_id: text("polar_subscription_id").unique(),
+  polar_customer_id: text("polar_customer_id"),
+  current_period_start: timestamp("current_period_start"),
+  current_period_end: timestamp("current_period_end"),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
+});
+
 // Better Auth tables
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
@@ -174,6 +189,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   votes: many(votes),
   alerts: many(alerts),
   freelance: many(freelance),
+  subscriptions: many(subscriptions),
 }));
 
 export const companiesRelations = relations(companies, ({ one, many }) => ({
@@ -248,5 +264,12 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
   alert: one(alerts, {
     fields: [notifications.alert_id],
     references: [alerts.id],
+  }),
+}));
+
+export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
+  user: one(users, {
+    fields: [subscriptions.user_id],
+    references: [users.id],
   }),
 }));

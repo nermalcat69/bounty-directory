@@ -24,7 +24,13 @@ export const PRODUCTS_PRODUCTION = {
       price: 999,
     },
   },
-
+  subscriptions: {
+    alerts_monthly: {
+      id: "REPLACE_WITH_ACTUAL_PRODUCT_ID", // TODO: Replace with actual Polar product ID
+      name: "Alert Subscription",
+      price: 3,
+    },
+  },
 };
 
 export const PRODUCTS_SANDBOX = {
@@ -45,7 +51,13 @@ export const PRODUCTS_SANDBOX = {
       price: 999,
     },
   },
-
+  subscriptions: {
+    alerts_monthly: {
+      id: "REPLACE_WITH_ACTUAL_SANDBOX_PRODUCT_ID", // TODO: Replace with actual Polar sandbox product ID
+      name: "Alert Subscription",
+      price: 3,
+    },
+  },
 };
 
 export function getJobListingProduct(plan: string) {
@@ -103,12 +115,96 @@ export async function activateJobListing(
   jobListingId: string,
   productId: string,
 ) {
-  // TODO: Implement job listing activation with current database
-  console.log("Job listing activation - implementation needed");
-  
-  revalidatePath("/");
-  revalidatePath("/jobs");
-  revalidatePath(`/jobs/${jobListingId}`);
+  const { db } = await import("@/db");
+  const { jobs } = await import("@/db/schema");
+  const { eq } = await import("drizzle-orm");
 
-  return null;
+  await db
+    .update(jobs)
+    .set({ active: true, plan: productId as any })
+    .where(eq(jobs.id, jobListingId));
+
+  revalidatePath("/jobs");
+}
+
+// Subscription-related functions
+export function getSubscriptionProduct() {
+  if (process.env.POLAR_ENVIRONMENT === "production") {
+    return PRODUCTS_PRODUCTION.subscriptions.alerts_monthly;
+  }
+  return PRODUCTS_SANDBOX.subscriptions.alerts_monthly;
+}
+
+export async function createSubscriptionCheckoutSession({
+  userId,
+  email,
+  customerName,
+}: {
+  userId: string;
+  email: string;
+  customerName: string;
+}) {
+  const product = getSubscriptionProduct();
+
+  const session = await polar.checkouts.create({
+    productId: product.id,
+    customerExternalId: userId,
+    customerEmail: email,
+    customerName,
+    successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/alerts?success=true`,
+    metadata: {
+      userId,
+      plan: "alerts_monthly",
+    },
+  });
+
+  return session;
+}
+
+export async function activateSubscription(
+  userId: string,
+  polarSubscriptionId: string,
+  polarCustomerId: string,
+) {
+  const { db } = await import("@/db");
+  const { subscriptions } = await import("@/db/schema");
+  const { eq } = await import("drizzle-orm");
+
+  // Check if subscription already exists
+  const existingSubscription = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.user_id, userId))
+    .limit(1);
+
+  const now = new Date();
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+
+  if (existingSubscription.length > 0) {
+    // Update existing subscription
+    await db
+      .update(subscriptions)
+      .set({
+        status: "active",
+        polar_subscription_id: polarSubscriptionId,
+        polar_customer_id: polarCustomerId,
+        current_period_start: now,
+        current_period_end: nextMonth,
+        updated_at: now,
+      })
+      .where(eq(subscriptions.user_id, userId));
+  } else {
+    // Create new subscription
+    await db.insert(subscriptions).values({
+      user_id: userId,
+      plan_type: "alerts_monthly",
+      status: "active",
+      polar_subscription_id: polarSubscriptionId,
+      polar_customer_id: polarCustomerId,
+      current_period_start: now,
+      current_period_end: nextMonth,
+    });
+  }
+
+  revalidatePath("/alerts");
 }
