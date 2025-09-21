@@ -138,13 +138,19 @@ export const alerts = pgTable("alerts", {
 // Issues table for notification system
 export const issues = pgTable("issues", {
   id: text("id").primaryKey(), // GitHub issue ID as string
+  repo: text("repo").notNull(), // owner/repo format
+  number: integer("number").notNull(), // GitHub issue number
   title: text("title").notNull(),
   body: text("body"),
   html_url: text("html_url").notNull(),
   user_login: text("user_login").notNull(),
   user_avatar_url: text("user_avatar_url"),
-  repo: text("repo").notNull(), // owner/repo format
   labels: text("labels"), // JSON string of labels
+  raw: text("raw"), // JSON string of full GitHub issue data
+  comments: integer("comments").default(0), // Number of comments
+  state: text("state").notNull(), // 'open' or 'closed'
+  assignee: text("assignee"), // GitHub username of assignee
+  language: text("language"), // Repository primary language
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
 }, (table) => ({

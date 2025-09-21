@@ -2,8 +2,12 @@ zerops:
   - setup: app
     build:
       envVariables:
-        DATABASE_URL: postgresql://neondb_owner:npg_bIVO9MaCv0NY@ep-bold-sun-adejpfm9-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
-        REDIS_URL: redis://redis:6379
+        DATABASE_URL: ${RUNTIME_DATABASE_URL}
+        REDIS_URL: ${RUNTIME_REDIS_URL}
+        GITHUB_TOKEN: ${RUNTIME_GITHUB_TOKEN}
+        BETTER_AUTH_SECRET: ${RUNTIME_BETTER_AUTH_SECRET}
+        BETTER_AUTH_URL: ${RUNTIME_BETTER_AUTH_URL}
+        NEXT_AUTH_URL: ${RUNTIME_NEXT_AUTH_URL}
       base: bun@1.2
       buildCommands:
         - bun install
@@ -13,6 +17,10 @@ zerops:
       envVariables:
         DATABASE_URL: postgresql://neondb_owner:npg_bIVO9MaCv0NY@ep-bold-sun-adejpfm9-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
         REDIS_URL: redis://redis:6379
+        GITHUB_TOKEN: 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 
+        BETTER_AUTH_SECRET: 5541b356f52d2da2e7803219c753cf817637630fd83958a419e6729ce4e4f2e0
+        BETTER_AUTH_URL: https://bounty.directory
+        NEXT_AUTH_URL: https://bounty.directory
       crontab:
         # 30-minute bounty updates (additive caching)
         - command: "curl -X GET http://localhost:3000/api/cron/30min-bounty-update"
