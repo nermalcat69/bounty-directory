@@ -3,9 +3,9 @@ import { db } from "@/db";
 import { issues, notifications, alerts } from "@/db/schema";
 import { NotificationService } from "@/lib/notifications";
 import { eq } from "drizzle-orm";
-import { redis } from "@/lib/kv";
+import { redisCache } from "@/lib/redis-cache";
 import { revalidatePath, revalidateTag } from "next/cache";
-import { updateBountyCacheForIssue } from "@/lib/redis-cache-updater";
+import { updateBountyCacheForIssue } from "@/lib/postgres-cache-updater";
 import crypto from "crypto";
 
 // Verify GitHub webhook signature

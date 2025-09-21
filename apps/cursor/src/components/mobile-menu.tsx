@@ -11,7 +11,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 
 const navigationLinks = [
-  { href: "/rules", label: "Bounties" },
   { href: "/freelance", label: "Freelance" },
   { href: "/jobs", label: "Jobs" },
   { href: "/faqs", label: "FAQs" },

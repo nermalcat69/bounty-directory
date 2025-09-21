@@ -1,5 +1,5 @@
 import "server-only";
-import { redis } from "./kv";
+import { redisCache } from "./redis-cache";
 
 export interface GitHubIssue {
   id: number;
@@ -9,6 +9,7 @@ export interface GitHubIssue {
   html_url: string;
   user: {
     login: string;
+    avatar_url: string;
   };
   created_at: string;
   updated_at: string;
@@ -162,7 +163,7 @@ export class GitHubAPI {
     
     try {
       // Check cache first
-      const cached = await redis.get(cacheKey);
+      const cached = await redisCache.get(cacheKey);
       if (cached !== null) {
         console.log(`Cache hit for repo language: ${owner}/${repo}`);
         return cached === 'null' ? null : cached;
@@ -173,7 +174,7 @@ export class GitHubAPI {
       const language = response.data.language;
       
       // Cache for 1 hour (3600 seconds)
-      await redis.setex(cacheKey, 3600, language || 'null');
+      await redisCache.setex(cacheKey, 3600, language || 'null');
       
       return language;
     } catch (error) {

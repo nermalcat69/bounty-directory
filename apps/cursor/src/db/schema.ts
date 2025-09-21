@@ -1,11 +1,13 @@
 import { relations } from "drizzle-orm";
 import {
   boolean,
+  index,
   integer,
   pgEnum,
   pgTable,
   text,
   timestamp,
+  unique,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -134,6 +136,7 @@ export const issues = pgTable("issues", {
   body: text("body"),
   html_url: text("html_url"),
   user_login: text("user_login"),
+  user_avatar_url: text("user_avatar_url"), // GitHub user avatar URL
   created_at: timestamp("created_at"),
   updated_at: timestamp("updated_at"),
   labels: text("labels"), // JSON string of labels
@@ -159,13 +162,23 @@ export const alerts = pgTable("alerts", {
 
 export const notifications = pgTable("notifications", {
   id: uuid("id").primaryKey().defaultRandom(),
-  issue_id: text("issue_id").references(() => issues.id),
-  alert_id: uuid("alert_id").references(() => alerts.id),
-  sent_at: timestamp("sent_at").defaultNow(),
-  delivery_method: text("delivery_method").notNull(),
-  status: text("status").default("pending"), // 'pending', 'sent', 'failed'
+  issue_id: text("issue_id").references(() => issues.id).notNull(),
+  alert_id: uuid("alert_id").references(() => alerts.id).notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  sent_at: timestamp("sent_at"),
+  delivery_method: text("delivery_method").notNull(), // 'discord', 'webhook', 'email'
+  status: text("status").default("pending").notNull(), // 'pending', 'sent', 'failed', 'retrying'
+  delivered: boolean("delivered").default(false).notNull(),
+  attempts: integer("attempts").default(0).notNull(),
   error_message: text("error_message"),
-});
+  response_data: text("response_data"), // JSON string of delivery response for audit
+}, (table) => ({
+  // Unique constraint to prevent duplicate notifications for same alert+issue
+  uniqueAlertIssue: unique("unique_alert_issue").on(table.alert_id, table.issue_id),
+  // Index for efficient queries
+  statusIdx: index("notifications_status_idx").on(table.status),
+  createdAtIdx: index("notifications_created_at_idx").on(table.created_at),
+}));
 
 // Subscriptions table for alert subscriptions
 export const subscriptions = pgTable("subscriptions", {
@@ -180,6 +193,19 @@ export const subscriptions = pgTable("subscriptions", {
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
 });
+
+// Fetch metadata table for persistent storage (replaces Redis)
+export const fetchMetadata = pgTable("fetch_metadata", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  key: varchar("key", { length: 255 }).notNull().unique(),
+  value: text("value"),
+  expires_at: timestamp("expires_at"),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
+}, (table) => ({
+  keyIdx: index("fetch_metadata_key_idx").on(table.key),
+  expiresAtIdx: index("fetch_metadata_expires_at_idx").on(table.expires_at),
+}));
 
 // Better Auth tables
 // Relations

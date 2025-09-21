@@ -1,7 +1,7 @@
 import "server-only";
 
 import { BountyFetcher } from "@/lib/bounty-fetcher";
-import { redis } from "@/lib/kv";
+import { redisCache } from "@/lib/redis-cache";
 
 const WORKER_LOCK_KEY = "worker:bounty:lock";
 const WORKER_LOCK_TTL = 60 * 60; // 1 hour
@@ -51,7 +51,7 @@ export class BountyWorker {
     }
 
     // Release lock if we have it
-    await redis.del(WORKER_LOCK_KEY);
+    await redisCache.del(WORKER_LOCK_KEY);
 
     console.log("Bounty worker stopped");
   }
@@ -61,12 +61,10 @@ export class BountyWorker {
 
     try {
       // Try to acquire lock
-      const lockAcquired = await redis.set(
+      const lockAcquired = await redisCache.setNX(
         WORKER_LOCK_KEY,
         process.pid?.toString() || "unknown",
-        "EX",
-        WORKER_LOCK_TTL,
-        "NX"
+        WORKER_LOCK_TTL
       );
 
       if (!lockAcquired) {
@@ -87,7 +85,7 @@ export class BountyWorker {
       });
 
       // Store last run stats
-      await redis.setex("worker:bounty:last_run", 24 * 60 * 60, JSON.stringify({
+      await redisCache.setex("worker:bounty:last_run", 24 * 60 * 60, JSON.stringify({
         timestamp: new Date().toISOString(),
         duration,
         processed: result.processed,
@@ -99,14 +97,14 @@ export class BountyWorker {
       console.error("Error in bounty worker:", error);
 
       // Store error info
-      await redis.setex("worker:bounty:last_error", 24 * 60 * 60, JSON.stringify({
+      await redisCache.setex("worker:bounty:last_error", 24 * 60 * 60, JSON.stringify({
         timestamp: new Date().toISOString(),
         error: error instanceof Error ? error.message : String(error),
       }));
 
     } finally {
       // Always release the lock
-      await redis.del(WORKER_LOCK_KEY);
+      await redisCache.del(WORKER_LOCK_KEY);
     }
   }
 
@@ -116,8 +114,8 @@ export class BountyWorker {
     lastError?: any;
     rateLimit?: { remaining: number; reset: number };
   }> {
-    const lastRunData = await redis.get("worker:bounty:last_run");
-    const lastErrorData = await redis.get("worker:bounty:last_error");
+    const lastRunData = await redisCache.get("worker:bounty:last_run");
+    const lastErrorData = await redisCache.get("worker:bounty:last_error");
     const rateLimit = await this.fetcher.getRateLimit();
 
     return {

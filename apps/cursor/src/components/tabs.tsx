@@ -3,22 +3,12 @@
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Suspense } from "react";
-import { RulesSearch } from "./rules-search";
 import { Button } from "./ui/button";
 
 const tabs = [
   {
-    name: "All",
-    path: "/rules",
-  },
-  {
-    name: "Popular",
-    path: "/rules/popular",
-  },
-  {
-    name: "Official",
-    path: "/rules/official",
+    name: "All Bounties",
+    path: "/",
   },
 ];
 
@@ -43,10 +33,6 @@ export function Tabs() {
           </Link>
         ))}
       </div>
-
-      <Suspense fallback={null}>
-        <RulesSearch />
-      </Suspense>
     </div>
   );
 }

@@ -24,7 +24,7 @@ export function CopyButton({
     navigator.clipboard.writeText(content);
     setCopied(true);
     toast(
-      "Copied to clipboard. Add a .cursorrules file to your project and paste the rule.",
+      "Copied to clipboard.",
     );
 
     setTimeout(() => {

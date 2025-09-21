@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { GitHubAPI } from "@/lib/github";
-import { redis } from "@/lib/kv";
+import { redisCache } from "@/lib/redis-cache";
 import { parseBountyAmount, formatBountyAmount } from "@/utils/bounty-calculator";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { isSpamIssue, logSpamUserFiltered } from "@/utils/spam-filter";
@@ -123,7 +123,7 @@ export async function GET() {
       lastUpdated: new Date().toISOString()
     };
     
-    await redis.setex("bounty:total", 86400, JSON.stringify(totalData));
+    await redisCache.setex("bounty:total", 86400, JSON.stringify(totalData));
     
     // Revalidate ISR pages and tags to use fresh data
     revalidateTag('total-bounty-amount');

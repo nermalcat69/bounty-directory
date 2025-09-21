@@ -28,27 +28,10 @@ export function BountyCard({ bounty, isPage }: { bounty: BountyWithAmount; isPag
     return count.toString();
   };
 
-  // Extract user avatar URL from raw GitHub data
+  // Get user avatar URL from database field with fallback
   const getUserAvatarUrl = (): string => {
-    // First, try to use user_avatar_url if it exists
-    if (bounty.user_avatar_url) {
-      return bounty.user_avatar_url;
-    }
-    
-    // Extract from raw GitHub data if available
-    if (bounty.raw) {
-      try {
-        const rawData = JSON.parse(bounty.raw);
-        if (rawData.user?.avatar_url) {
-          return rawData.user.avatar_url;
-        }
-      } catch (error) {
-        console.warn('Failed to parse raw GitHub data for bounty:', bounty.id, error);
-      }
-    }
-    
-    // Fallback to GitHub avatar URL pattern
-    return `https://github.com/${bounty.user_login}.png`;
+    // Use the database field directly, with fallback to GitHub default
+    return bounty.user_avatar_url || `https://github.com/${bounty.user_login}.png`;
   };
 
   // Construct GitHub URL from available URL fields or repo info

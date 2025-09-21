@@ -1,6 +1,6 @@
 "use server";
 
-import { redis } from "@directories/kv/redis";
+import { redisCache } from "@/lib/redis-cache";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { actionClient } from "./safe-action";
@@ -16,11 +16,11 @@ export const voteAction = actionClient
       headers.get("x-forwarded-for"),
     );
 
-    const hasVoted = await redis.sadd(`rules:${slug}:ip:${clientIP}`, "voted");
+    const hasVoted = await redisCache.sadd(`rules:${slug}:ip:${clientIP}`, "voted");
 
-    if (!hasVoted) {
-      throw new Error("You have already voted");
+    if (hasVoted === 0) {
+      return { success: false, message: "You have already voted for this rule" };
     }
 
-    await redis.incr(`rules:${slug}`);
+    await redisCache.incr(`rules:${slug}`);
   });

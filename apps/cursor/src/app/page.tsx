@@ -6,9 +6,9 @@ import {
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Bounty Directory - Cursor Rules & Bounties",
+  title: "Bounty Directory - Discover Bounties & Opportunities",
   description:
-    "Enhance your Cursor with custom rules, discover bounties, and join a community of Cursor enthusiasts.",
+    "Discover bounties, freelance opportunities, and join a community of developers and creators.",
 };
 
 // Enable ISR with 5-minute revalidation for better performance

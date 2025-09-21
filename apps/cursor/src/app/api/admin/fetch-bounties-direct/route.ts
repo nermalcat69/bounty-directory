@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { GitHubAPI, extractLanguageFromRepository } from "@/lib/github";
-import { redis } from "@/lib/kv";
+import { redisCache } from "@/lib/redis-cache";
 import { parseBountyAmount, formatBountyAmount } from "@/utils/bounty-calculator";
 import { isSpamIssue, logSpamUserFiltered } from "@/utils/spam-filter";
 
@@ -157,8 +157,8 @@ export async function POST() {
     await fetchBountiesForQuery(antiworkQuery, "antiwork dollar labels");
     
     // Cache the results in Redis
-    await redis.setex("snapshots:latest", 3600, JSON.stringify(allBounties));
-    await redis.setex("snapshots:top100", 3600, JSON.stringify(allBounties.slice(0, 100)))
+    await redisCache.setex("snapshots:latest", 3600, JSON.stringify(allBounties));
+    await redisCache.setex("snapshots:top100", 3600, JSON.stringify(allBounties.slice(0, 100)))
     
     const formattedTotal = formatBountyAmount(totalAmount);
     

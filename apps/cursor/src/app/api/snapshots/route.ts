@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { redis } from "@/lib/kv";
+import { redisCache } from "@/lib/redis-cache";
 
 export interface SnapshotBounty {
   id: string;
@@ -38,9 +38,9 @@ export async function GET(request: NextRequest) {
     const sort = searchParams.get("sort") || "recent"; // recent, oldest, comments
     const search = searchParams.get("search");
 
-    // Try to get from Redis cache first
+    // Try to get from PostgreSQL cache first
     const cacheKey = `snapshots:${JSON.stringify({ page, per_page, language, repo, sort, search })}`;
-    const cached = await redis.get(cacheKey);
+    const cached = await redisCache.get(cacheKey);
 
     if (cached) {
       const cachedData = JSON.parse(cached);
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // For now, get from the pre-cached snapshot in Redis
+    // For now, get from the pre-cached snapshot in PostgreSQL cache
     // This will be populated by the bounty worker
     let snapshotKey = "snapshots:latest";
     
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const snapshot = await redis.get(snapshotKey);
+    const snapshot = await redisCache.get(snapshotKey);
     
     if (!snapshot) {
       return NextResponse.json(
@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
     };
 
     // Cache the response for 5 minutes
-    await redis.setex(cacheKey, 300, JSON.stringify(response));
+    await redisCache.setex(cacheKey, 300, JSON.stringify(response));
 
     return NextResponse.json(response);
 
@@ -138,7 +138,7 @@ export async function GET(request: NextRequest) {
 export async function POST() {
   try {
     // Try cache first
-    const cached = await redis.get("snapshots:stats");
+    const cached = await redisCache.get("snapshots:stats");
     if (cached) {
       return NextResponse.json({
         ...JSON.parse(cached),
@@ -147,7 +147,7 @@ export async function POST() {
     }
 
     // Get from latest snapshot
-    const snapshot = await redis.get("snapshots:latest");
+    const snapshot = await redisCache.get("snapshots:latest");
     
     if (!snapshot) {
       return NextResponse.json(
@@ -190,7 +190,7 @@ export async function POST() {
     };
 
     // Cache for 10 minutes
-    await redis.setex("snapshots:stats", 600, JSON.stringify(stats));
+    await redisCache.setex("snapshots:stats", 600, JSON.stringify(stats));
 
     return NextResponse.json({
       ...stats,

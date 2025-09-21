@@ -3,24 +3,24 @@
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { getSections } from "@directories/data/rules";
 import { PlusIcon } from "lucide-react";
 import Link from "next/link";
 
-const allSections = getSections();
+const navigationItems = [
+  { href: "/", label: "Bounties" },
+  { href: "/freelance", label: "Freelance" },
+  { href: "/jobs", label: "Jobs" },
+];
 
 export function Menu() {
   return (
     <aside className="w-64 p-4 flex flex-col">
       <ScrollArea className="flex-grow">
         <div className="space-y-1">
-          {allSections.map((section) => (
-            <Link href={`/rules/${section.slug}`} key={section.tag}>
+          {navigationItems.map((item) => (
+            <Link href={item.href} key={item.label}>
               <Button variant="ghost" className="w-full justify-start">
-                {section.tag}
-                <span className="ml-auto text-[#878787]">
-                  {section.rules.length}
-                </span>
+                {item.label}
               </Button>
             </Link>
           ))}

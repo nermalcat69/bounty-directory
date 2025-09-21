@@ -1,13 +1,9 @@
 import { getCompanies } from "@/data/queries";
-import { getSections } from "@directories/data/rules";
 import type { MetadataRoute } from "next";
 
 const BASE_URL = "https://bounty.directory";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Get all rules sections
-  const sections = getSections();
-
   // Base routes
   const routes: MetadataRoute.Sitemap = [
     {
@@ -17,46 +13,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 1,
     },
     {
-      url: `${BASE_URL}/rules`,
+      url: `${BASE_URL}/freelance`,
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 0.9,
     },
     {
-      url: `${BASE_URL}/rules/popular`,
+      url: `${BASE_URL}/jobs`,
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 0.9,
     },
     {
-      url: `${BASE_URL}/learn`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.9,
-    },
-
-  ];
-
-  // Add routes for each rules section
-  for (const section of sections) {
-    for (const rule of section.rules) {
-      routes.push({
-        url: `${BASE_URL}/${rule.slug}`,
-        lastModified: new Date(),
-        changeFrequency: "weekly",
-        priority: 0.7,
-      });
-    }
-  }
-
-  for (const section of sections) {
-    routes.push({
-      url: `${BASE_URL}/rules/${section.slug}`,
+      url: `${BASE_URL}/about`,
       lastModified: new Date(),
       changeFrequency: "weekly",
-      priority: 0.7,
-    });
-  }
+      priority: 0.8,
+    },
+  ];
 
 
 

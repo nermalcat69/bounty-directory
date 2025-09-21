@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 export const metadata = {
   title: "Advertise on Bounty Directory",
   description:
-    "Reach over 120,000 developers monthly and showcase your product or service on Bounty Directory, the community-driven platform for Cursor AI rules and prompts.",
+    "Reach over 120,000 developers monthly and showcase your product or service on Bounty Directory, the community-driven platform for bounties and opportunities.",
 };
 
 export default function Advertise() {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { GitHubAPI, extractLanguageFromRepository } from "@/lib/github";
-import { redis } from "@/lib/kv";
+import { redisCache } from "@/lib/redis-cache";
 import { parseBountyAmount, formatBountyAmount } from "@/utils/bounty-calculator";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { filterIssuesWithDollarLabels } from "@/utils/antiwork-filter";
@@ -10,8 +10,8 @@ export async function GET() {
   try {
     console.log("🚀 Starting daily bounty update...");
     
-    // Get existing data from Redis
-    const existingSnapshotsData = await redis.get("snapshots:latest");
+    // Get existing data from PostgreSQL cache
+    const existingSnapshotsData = await redisCache.get("snapshots:latest");
     const existingBounties = existingSnapshotsData ? JSON.parse(existingSnapshotsData) : [];
     
     const allBounties: any[] = [];
@@ -201,8 +201,8 @@ export async function GET() {
     const timestamp = new Date().toISOString();
     
     // Cache the comprehensive results with longer expiration (24 hours)
-    await redis.setex("snapshots:latest", 86400, JSON.stringify(mergedBounties));
-    await redis.setex("snapshots:top100", 86400, JSON.stringify(mergedBounties.slice(0, 100)));
+    await redisCache.setex("snapshots:latest", 86400, JSON.stringify(mergedBounties));
+        await redisCache.setex("snapshots:top100", 86400, JSON.stringify(mergedBounties.slice(0, 100)));
     
     // Cache total bounty amount
     const totalData = {
@@ -212,7 +212,7 @@ export async function GET() {
       count: mergedBounties.length,
       validBounties: validBountiesCount
     };
-    await redis.setex("bounty:total", 86400, JSON.stringify(totalData));
+    await redisCache.setex("bounty:total", 86400, JSON.stringify(totalData));
     
     // Revalidate ISR cache
     revalidateTag("bounties");

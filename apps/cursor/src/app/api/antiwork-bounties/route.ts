@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { GitHubAPI, fetchAntiworkBounties } from "@/lib/github";
-import { redis } from "@/lib/kv";
+import { redisCache } from "@/lib/redis-cache";
 import { filterIssuesWithDollarLabels } from "@/utils/antiwork-filter";
 
 export const revalidate = 300; // 5 minutes
@@ -44,7 +44,7 @@ export async function GET() {
     console.log("Fetching antiwork bounties from cached data");
     
     // Get bounties from cache (same data used by main bounties API)
-    const cachedBounties = await redis.get("snapshots:latest");
+    const cachedBounties = await redisCache.get("snapshots:latest");
     
     if (!cachedBounties) {
       console.log("No cached bounty data found");

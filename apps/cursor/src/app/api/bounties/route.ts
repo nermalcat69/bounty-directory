@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { redis } from "@/lib/kv";
+import { redisCache } from "@/lib/redis-cache";
 import { parseBountyAmount, formatBountyAmount } from "@/utils/bounty-calculator";
 import { getCachedBounties } from "@/lib/cached-bounty-fetcher";
 
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     
     // Check cache first for language statistics (unless force is true)
     if (!force) {
-      const cachedLanguages = await redis.get("bounty:languages");
+      const cachedLanguages = await redisCache.get("bounty:languages");
       if (cachedLanguages) {
         try {
           const parsed = JSON.parse(cachedLanguages);
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get bounties from cache to extract languages
-    const cachedBounties = await redis.get("snapshots:latest");
+    const cachedBounties = await redisCache.get("snapshots:latest");
     let allBounties: BountyItem[] = [];
 
     if (cachedBounties) {
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
       count: languages.length
     };
     
-    await redis.setex("bounty:languages", 28800, JSON.stringify(languageData));
+    await redisCache.setex("bounty:languages", 28800, JSON.stringify(languageData));
     console.log(`Calculated and cached ${languages.length} languages`);
 
     // Warm cache for popular language filters (async, don't wait)
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
     popularLanguages.forEach(async (lang) => {
        if (languages.some(l => l && l.toLowerCase() === lang)) {
         const warmCacheKey = `bounty:total:language:${lang}`;
-        const existingCache = await redis.get(warmCacheKey);
+        const existingCache = await redisCache.get(warmCacheKey);
         if (!existingCache) {
           // Calculate totals for this language
           const langBounties = validBounties.filter(bounty => 
@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
             formatted: formatBountyAmount(langTotal),
             lastUpdated: new Date().toISOString()
           };
-          await redis.setex(warmCacheKey, 43200, JSON.stringify(langData)); // 12 hours
+          await redisCache.setex(warmCacheKey, 43200, JSON.stringify(langData)); // 12 hours
           console.log(`Warmed cache for ${lang}: ${langBounties.length} bounties`);
         }
       }

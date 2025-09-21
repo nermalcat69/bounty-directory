@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { redis } from "@/lib/kv";
+import { redisCache } from "@/lib/redis-cache";
 import { parseBountyAmount } from "@/utils/bounty-calculator";
 
 export async function GET() {
   try {
     // Check what's in Redis
-    const snapshot = await redis.get("snapshots:latest");
-    const top100 = await redis.get("snapshots:top100");
+    const snapshot = await redisCache.get("snapshots:latest");
+  const top100 = await redisCache.get("snapshots:top100");
     
     let bountyData = null;
     let bountyCount = 0;

@@ -2,10 +2,11 @@ import "server-only";
 
 import { db } from "@/db";
 import { issues, alerts, notifications } from "@/db/schema";
-import { redis } from "./kv";
+import { redisCache } from "./redis-cache";
 import { GitHubAPI, extractRepoFromUrl, extractLanguageFromRepository, fetchAntiworkBounties, type GitHubIssue } from "./github";
 import { eq, and, sql } from "drizzle-orm";
 import { isSpamIssue, logSpamUserFiltered } from "@/utils/spam-filter";
+import { notificationService } from "./notifier";
 
 export class BountyFetcher {
   private github: GitHubAPI;
@@ -41,19 +42,19 @@ export class BountyFetcher {
         console.log(`Fetching page ${page}...`);
 
         // Get cached ETag for this page
-        const etag = await redis.get(`github:etag:page:${page}`);
+        const etag = await redisCache.get(`github:etag:page:${page}`);
 
         try {
           const response = await this.github.searchIssues(query, page, 100, etag || undefined);
           rateLimit = response.rateLimit;
 
           // Update rate limit in Redis
-          await redis.setex("ratelimit:remaining", 3600, rateLimit.remaining.toString());
-          await redis.setex("ratelimit:reset", 3600, rateLimit.reset.toString());
+          await redisCache.setex("ratelimit:remaining", 3600, rateLimit.remaining.toString());
+          await redisCache.setex("ratelimit:reset", 3600, rateLimit.reset.toString());
 
           // Save new ETag
           if (response.etag) {
-            await redis.setex(`github:etag:page:${page}`, 3600, response.etag);
+            await redisCache.setex(`github:etag:page:${page}`, 3600, response.etag);
           }
 
           // Process issues
@@ -93,6 +94,7 @@ export class BountyFetcher {
                 body: issue.body,
                 html_url: issue.html_url,
                 user_login: issue.user.login,
+                user_avatar_url: issue.user.avatar_url,
                 created_at: new Date(issue.created_at),
                 updated_at: new Date(issue.updated_at),
                 labels: JSON.stringify(issue.labels.map(l => l.name)),
@@ -107,6 +109,7 @@ export class BountyFetcher {
                 set: {
                   title: issue.title,
                   body: issue.body,
+                  user_avatar_url: issue.user.avatar_url,
                   updated_at: new Date(issue.updated_at),
                   labels: JSON.stringify(issue.labels.map(l => l.name)),
                   raw: JSON.stringify(issue),
@@ -199,7 +202,7 @@ export class BountyFetcher {
 
       // Process notifications for new issues
       if (newIssueIds.length > 0) {
-        await this.processNotifications(newIssueIds);
+        await this.processNotifications();
       }
 
       console.log(`Fetch complete: ${processed} processed, ${newIssues} new issues`);
@@ -239,98 +242,37 @@ export class BountyFetcher {
       .limit(1000);
 
     // Cache in Redis with 1 hour TTL
-    await redis.setex("snapshots:latest", 3600, JSON.stringify(latestBounties));
+    await redisCache.setex("snapshots:latest", 3600, JSON.stringify(latestBounties));
 
-    // Also create a top 100 snapshot
-    const top100 = latestBounties.slice(0, 100);
-    await redis.setex("snapshots:top100", 3600, JSON.stringify(top100));
+      // Cache top 100 bounties
+      const top100 = latestBounties.slice(0, 100);
+      await redisCache.setex("snapshots:top100", 3600, JSON.stringify(top100));
 
-    // Invalidate related caches that depend on bounty data
-    await Promise.all([
-      redis.del("bounty:languages"), // Language statistics cache
-      redis.del("bounty:total"),     // Total bounty amount cache
-      redis.del("snapshots:stats")   // Snapshot statistics cache
-    ]);
+      // Invalidate related caches
+      await redisCache.delMultiple([
+        "bounty:languages", // Language statistics cache
+        "bounty:total",     // Total bounty amount cache
+        "snapshots:stats"   // Snapshot statistics cache
+      ]);
 
     console.log(`Snapshot generated with ${latestBounties.length} issues and invalidated dependent caches`);
   }
 
-  private async processNotifications(newIssueIds: string[]): Promise<void> {
-    console.log(`Processing notifications for ${newIssueIds.length} new issues...`);
-
-    // Check which issues haven't been notified yet
-    const unnotifiedIssues: string[] = [];
-    
-    for (const issueId of newIssueIds) {
-      const isNotified = await redis.sismember("bounty:notified", `gh:${issueId}`);
-      if (!isNotified) {
-        unnotifiedIssues.push(issueId);
-      }
+  async processNotifications() {
+    try {
+      console.log("Processing notifications using notification service...");
+      const result = await notificationService.processPendingNotifications();
+      console.log("Notification processing completed:", result);
+      return result;
+    } catch (error) {
+      console.error("Error processing notifications:", error);
+      throw error;
     }
-
-    if (unnotifiedIssues.length === 0) {
-      console.log("No new issues to notify");
-      return;
-    }
-
-    // Get all active alerts
-    const activeAlerts = await db
-      .select()
-      .from(alerts)
-      .where(eq(alerts.active, true));
-
-    for (const issueId of unnotifiedIssues) {
-      // Get issue details
-      const issue = await db
-        .select()
-        .from(issues)
-        .where(eq(issues.id, issueId))
-        .limit(1);
-
-      if (issue.length === 0) continue;
-
-      const issueData = issue[0];
-
-      // Find matching alerts
-      for (const alert of activeAlerts) {
-        let shouldNotify = false;
-
-        if (alert.repo) {
-          // Repo-specific alert
-          shouldNotify = issueData.repo === alert.repo;
-        } else if (alert.query) {
-          // Query-based alert (simple string matching for now)
-          const searchText = `${issueData.title} ${issueData.body} ${issueData.labels}`.toLowerCase();
-          shouldNotify = searchText.includes(alert.query.toLowerCase());
-        } else {
-          // Global alert (all bounties)
-          shouldNotify = true;
-        }
-
-        if (shouldNotify) {
-          // Create notification record
-          await db.insert(notifications).values({
-            issue_id: issueId,
-            alert_id: alert.id,
-            delivery_method: alert.delivery_method,
-            status: "pending",
-          });
-
-          console.log(`Created notification for issue ${issueId} to ${alert.delivery_method}`);
-        }
-      }
-
-      // Mark issue as notified
-      await redis.sadd("bounty:notified", `gh:${issueId}`);
-      await redis.expire("bounty:notified", 30 * 24 * 60 * 60); // 30 days
-    }
-
-    console.log(`Processed notifications for ${unnotifiedIssues.length} issues`);
   }
 
   async getRateLimit(): Promise<{ remaining: number; reset: number }> {
-    const remaining = await redis.get("ratelimit:remaining");
-    const reset = await redis.get("ratelimit:reset");
+    const remaining = await redisCache.get("ratelimit:remaining");
+    const reset = await redisCache.get("ratelimit:reset");
 
     return {
       remaining: remaining ? parseInt(remaining) : 0,

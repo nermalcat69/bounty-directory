@@ -4,7 +4,7 @@
  */
 
 import { unstable_cache } from "next/cache";
-import { RedisUtils } from "@/lib/redis-utils";
+import { redisCache } from "@/lib/redis-cache";
 import { parseBountyAmount, formatBountyAmount } from "@/utils/bounty-calculator";
 import type { BountyWithAmount } from "@/app/api/bounties/route";
 
@@ -115,11 +115,11 @@ function extractAmountFromLabels(labelsData: string | null | undefined | any[]):
 }
 
 /**
- * Cached function to get bounty snapshot from Redis
+ * Cached function to get bounty snapshot from PostgreSQL cache
  */
 const getCachedBountySnapshot = unstable_cache(
   async (): Promise<BountyItem[]> => {
-    const cachedBounties = await RedisUtils.get("snapshots:latest");
+    const cachedBounties = await redisCache.get("snapshots:latest");
     if (!cachedBounties) {
       return [];
     }
@@ -343,8 +343,8 @@ export async function fetchBountiesForISR(options: {
   } = options;
 
   try {
-    // Get bounties directly from Redis without Next.js caching for ISR
-    const cachedBounties = await RedisUtils.get("snapshots:latest");
+    // Get bounties directly from PostgreSQL cache without Next.js caching for ISR
+    const cachedBounties = await redisCache.get("snapshots:latest");
     if (!cachedBounties) {
       return {
         bounties: [],

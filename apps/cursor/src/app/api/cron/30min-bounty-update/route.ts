@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { GitHubAPI, extractLanguageFromRepository } from "@/lib/github";
-import { redis } from "@/lib/kv";
+import { redisCache } from "@/lib/redis-cache";
 import { parseBountyAmount, formatBountyAmount } from "@/utils/bounty-calculator";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { filterIssuesWithDollarLabels } from "@/utils/antiwork-filter";
@@ -30,7 +30,7 @@ export async function GET() {
     // Get existing cached data to merge with updates
     let existingBounties: any[] = [];
     try {
-      const cachedData = await redis.get("snapshots:latest");
+      const cachedData = await redisCache.get("snapshots:latest");
       if (cachedData) {
         existingBounties = JSON.parse(cachedData);
         console.log(`Found ${existingBounties.length} existing cached bounties`);
@@ -197,12 +197,12 @@ export async function GET() {
     }
     
     // Cache the merged results with shorter expiration (30 minutes)
-    await redis.setex("snapshots:latest", 1800, JSON.stringify(mergedBounties));
-    await redis.setex("snapshots:top100", 1800, JSON.stringify(mergedBounties.slice(0, 100)));
+    await redisCache.setex("snapshots:latest", 1800, JSON.stringify(mergedBounties));
+        await redisCache.setex("snapshots:top100", 1800, JSON.stringify(mergedBounties.slice(0, 100)));
     
     // Cache the total amount
     const formattedTotal = formatBountyAmount(finalTotalAmount);
-    await redis.setex("bounty:total", 1800, JSON.stringify({
+    await redisCache.setex("bounty:total", 1800, JSON.stringify({
       amount: finalTotalAmount,
       formatted: formattedTotal,
       lastUpdated: new Date().toISOString(),

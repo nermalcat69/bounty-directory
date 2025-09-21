@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { redis } from "@/lib/kv";
+import { redisCache } from "@/lib/redis-cache";
 import { parseBountyAmount, formatBountyAmount } from "@/utils/bounty-calculator";
 import { revalidatePath, revalidateTag } from "next/cache";
 
@@ -7,10 +7,10 @@ export async function GET() {
   try {
     console.log("📊 Starting daily total update...");
     
-    // Get existing bounty data from Redis
-    const snapshotsData = await redis.get("snapshots:latest");
-    if (!snapshotsData) {
-      console.log("❌ No bounty data found in Redis. Run daily bounty update first.");
+    // Get existing bounty data from PostgreSQL cache
+    const snapshotsData = await redisCache.get("snapshots:latest");
+  if (!snapshotsData) {
+    console.log("❌ No bounty data found in cache. Run daily bounty update first.");
       return NextResponse.json(
         { success: false, error: "No bounty data found. Run daily bounty update first." },
         { status: 404 }
@@ -27,8 +27,40 @@ export async function GET() {
     const repoTotals: Record<string, { amount: number; count: number }> = {};
     
     for (const bounty of bounties) {
-      if (bounty.amount) {
-        const amount = parseBountyAmount(bounty.amount);
+      // Extract amount from either the amount field or labels
+      let bountyAmountString = bounty.amount;
+      
+      // If no amount field, try to extract from labels
+      if (!bountyAmountString && bounty.labels) {
+        try {
+          let labels = [];
+          
+          // Handle different label formats (string or array)
+          if (typeof bounty.labels === 'string') {
+            labels = JSON.parse(bounty.labels);
+          } else if (Array.isArray(bounty.labels)) {
+            labels = bounty.labels;
+          }
+          
+          // Extract amount from labels
+          for (const label of labels) {
+            const labelName = typeof label === 'string' ? label : label?.name;
+            if (labelName && (labelName.includes('$') || labelName.toLowerCase().includes('bounty'))) {
+              // Use regex to extract dollar amounts
+              const match = labelName.match(/\$(\d+(?:\.\d+)?[km]?)/i);
+              if (match) {
+                bountyAmountString = `$${match[1]}`;
+                break;
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing labels for bounty:', bounty.id, error);
+        }
+      }
+      
+      if (bountyAmountString) {
+        const amount = parseBountyAmount(bountyAmountString);
         if (amount > 0) {
           totalAmount += amount;
           validBountiesCount++;
@@ -63,7 +95,7 @@ export async function GET() {
       count: bounties.length,
       validBounties: validBountiesCount
     };
-    await redis.setex("bounty:total", 86400, JSON.stringify(totalData));
+    await redisCache.setex("bounty:total", 86400, JSON.stringify(totalData));
     
     // Cache language-specific totals
     const languageKeys: string[] = [];
@@ -76,7 +108,7 @@ export async function GET() {
         count: data.count,
         lastUpdated: timestamp
       };
-      await redis.setex(languageKey, 86400, JSON.stringify(languageData));
+      await redisCache.setex(languageKey, 86400, JSON.stringify(languageData));
       languageKeys.push(languageKey);
     }
     
@@ -95,13 +127,13 @@ export async function GET() {
         count: data.count,
         lastUpdated: timestamp
       };
-      await redis.setex(repoKey, 86400, JSON.stringify(repoData));
+      await redisCache.setex(repoKey, 86400, JSON.stringify(repoData));
       repoKeys.push(repoKey);
     }
     
     // Cache list of available languages and repos
-    await redis.setex("bounty:languages", 86400, JSON.stringify(Object.keys(languageTotals)));
-    await redis.setex("bounty:repositories", 86400, JSON.stringify(topRepos.map(([repo]) => repo)));
+    await redisCache.setex("bounty:languages", 86400, JSON.stringify(Object.keys(languageTotals)));
+    await redisCache.setex("bounty:repositories", 86400, JSON.stringify(topRepos.map(([repo]) => repo)));
     
     // Cache summary statistics
     const summaryStats = {
@@ -128,7 +160,7 @@ export async function GET() {
       })),
       lastUpdated: timestamp
     };
-    await redis.setex("bounty:summary", 86400, JSON.stringify(summaryStats));
+    await redisCache.setex("bounty:summary", 86400, JSON.stringify(summaryStats));
     
     // Revalidate ISR cache
     revalidateTag("bounties");

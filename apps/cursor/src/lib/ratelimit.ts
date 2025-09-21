@@ -1,4 +1,4 @@
-import { redis } from "./kv";
+import { redisCache } from "./redis-cache";
 
 interface RateLimitResult {
   success: boolean;
@@ -21,15 +21,17 @@ class SlidingWindowRateLimit {
     const window = Math.floor(now / this.windowMs);
     const key = `ratelimit:${identifier}:${window}`;
     
-    const pipeline = redis.pipeline();
-    pipeline.incr(key);
-    pipeline.expire(key, Math.ceil(this.windowMs / 1000));
+    // Get current count
+    const currentCountStr = await redisCache.get(key);
+    const currentCount = currentCountStr ? parseInt(currentCountStr) : 0;
+    const newCount = currentCount + 1;
     
-    const results = await pipeline.exec();
-    const count = results?.[0]?.[1] as number || 0;
+    // Set the new count with expiration
+    const ttlSeconds = Math.ceil(this.windowMs / 1000);
+    await redisCache.setex(key, ttlSeconds, newCount.toString());
     
-    const success = count <= this.maxRequests;
-    const remaining = Math.max(0, this.maxRequests - count);
+    const success = newCount <= this.maxRequests;
+    const remaining = Math.max(0, this.maxRequests - newCount);
     const reset = new Date((window + 1) * this.windowMs);
     
     return {

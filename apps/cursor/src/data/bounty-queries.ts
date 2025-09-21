@@ -1,4 +1,4 @@
-import { redis } from "@/lib/kv";
+import { redisCache } from "@/lib/redis-cache";
 import { parseBountyAmount, formatBountyAmount } from "@/utils/bounty-calculator";
 
 export interface BountyAmount {
@@ -31,12 +31,12 @@ interface CachedBountyTotal {
 }
 
 /**
- * Server-side function to calculate total bounty amount from cached Redis data
+ * Server-side function to calculate total bounty amount from cached PostgreSQL data
  */
 export async function getTotalBountyAmount(): Promise<string> {
   try {
-    // Directly get from Redis cache (no HTTP requests during SSR)
-    const cachedTotal = await redis.get("bounty:total");
+    // Directly get from PostgreSQL cache (no HTTP requests during SSR)
+    const cachedTotal = await redisCache.get("bounty:total");
     if (cachedTotal) {
       const parsed: CachedBountyTotal = JSON.parse(cachedTotal);
       console.log(`Retrieved cached total bounty amount: ${parsed.formatted}`);

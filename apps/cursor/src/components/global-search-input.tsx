@@ -3,7 +3,7 @@ import { useQueryState } from "nuqs";
 export function GlobalSearchInput() {
   const [search, setSearch] = useQueryState("q", { defaultValue: "" });
 
-  const placeholder = "Search for a rule...";
+  const placeholder = "Search for bounties...";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

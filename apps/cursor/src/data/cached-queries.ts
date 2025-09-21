@@ -5,28 +5,14 @@ import {
   getTotalUsers,
 } from "@/data/queries";
 import { getCachedTotalBountyAmountString } from "@/lib/cached-bounty-fetcher";
-import { getPopularRules } from "@directories/data/popular";
 
 // Cache configuration
 const CACHE_TTL = {
-  POPULAR_RULES: 60 * 60, // 1 hour
   FEATURED_JOBS: 60 * 30, // 30 minutes
   TOTAL_USERS: 60 * 15, // 15 minutes
   BOUNTY_AMOUNT: 60 * 10, // 10 minutes
   POPULAR_POSTS: 60 * 20, // 20 minutes
 };
-
-// Cached version of getPopularRules
-export const getCachedPopularRules = unstable_cache(
-  async () => {
-    return await getPopularRules();
-  },
-  ["popular-rules"],
-  {
-    revalidate: CACHE_TTL.POPULAR_RULES,
-    tags: ["popular-rules", "homepage"],
-  }
-);
 
 // Cached version of getFeaturedJobs
 export const getCachedFeaturedJobs = unstable_cache(
