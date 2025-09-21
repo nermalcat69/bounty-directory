@@ -65,6 +65,9 @@ export async function GET(request: NextRequest) {
       language: language || undefined,
     });
     
+    const totalPages = Math.ceil(cachedData.total.count / limit);
+    const hasMore = page < totalPages;
+    
     const jsonResponse = NextResponse.json({
       success: true,
       data: {
@@ -73,8 +76,8 @@ export async function GET(request: NextRequest) {
         pagination: {
           page,
           limit,
-          hasMore: cachedData.bounties.length === limit,
-          totalPages: Math.ceil(cachedData.total.count / limit),
+          hasMore,
+          totalPages,
         },
       },
       cached: cachedData.cached,

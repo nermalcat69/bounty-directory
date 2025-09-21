@@ -18,6 +18,9 @@ export function BountyFiltersClient({
   const [selectedSort, setSelectedSort] = useState("recent");
   const [selectedLayout, setSelectedLayout] = useState("comfortable");
 
+  // Debug state changes
+  console.log(`🎛️ BountyFiltersClient state - Language: ${selectedLanguage}, Sort: ${selectedSort}, Total: ${totalBounties}`);
+
   return (
     <>
       {/* Filter Labels */}

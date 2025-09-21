@@ -46,6 +46,7 @@ export function useInfiniteScroll({
     const scrollTop = document.documentElement.scrollTop;
     const scrollHeight = document.documentElement.scrollHeight;
     const clientHeight = document.documentElement.clientHeight;
+    const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
 
     if (scrollTop + clientHeight >= scrollHeight - threshold) {
       isLoadingRef.current = true;

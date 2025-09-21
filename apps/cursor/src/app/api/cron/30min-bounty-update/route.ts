@@ -5,10 +5,45 @@ import { parseBountyAmount, formatBountyAmount } from "@/utils/bounty-calculator
 import { revalidatePath, revalidateTag } from "next/cache";
 import { filterIssuesWithDollarLabels } from "@/utils/antiwork-filter";
 import { isSpamIssue, logSpamUserFiltered } from "@/utils/spam-filter";
+import { bountyInitializationService } from "@/lib/bounty-initialization-service";
 
 export async function GET() {
   try {
     console.log("Starting 30-minute bounty update...");
+    
+    // Check if we need to initialize bounty data (when no bounties exist)
+    const hasExistingData = await bountyInitializationService.hasBountyData();
+    if (!hasExistingData) {
+      console.log("No bounty data found, triggering initialization...");
+      const initResult = await bountyInitializationService.initializeBountyData();
+      
+      if (initResult.success) {
+        console.log(`Initialization completed: ${initResult.bountyCount} bounties, ${initResult.formattedTotal}`);
+        
+        // Revalidate pages after initialization
+        revalidateTag('bounties');
+        revalidateTag('bounty-list');
+        revalidateTag('total-bounty-amount');
+        revalidateTag('homepage');
+        revalidatePath('/');
+        revalidatePath('/bounties');
+        
+        return NextResponse.json({
+          success: true,
+          message: "Bounty data initialized successfully",
+          result: {
+            initialized: true,
+            totalBounties: initResult.bountyCount,
+            totalAmount: initResult.totalAmount,
+            formattedTotal: initResult.formattedTotal,
+            lastUpdated: initResult.timestamp
+          }
+        });
+      } else {
+        console.error("Initialization failed:", initResult.message);
+        // Continue with regular update process even if initialization fails
+      }
+    }
     
     const github = new GitHubAPI(process.env.GITHUB_TOKEN);
     

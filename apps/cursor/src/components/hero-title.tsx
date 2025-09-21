@@ -11,7 +11,8 @@ export function HeroTitle({
   totalBountyAmount?: string;
 }) {
   const text = `Join the Bounty community with ${formatNumber(totalUsers)}+ members`;
-  const bountyText = totalBountyAmount ? `${totalBountyAmount} in rewards in open source contributions` : '';
+  const isZeroAmount = totalBountyAmount === '$0';
+  const bountyText = totalBountyAmount && !isZeroAmount ? `${totalBountyAmount} in rewards in open source contributions` : '';
 
   return (
     <div className="text-center mb-8">
@@ -20,11 +21,15 @@ export function HeroTitle({
         {text}
       </h1>
       
-      {/* Bounty amount - shows skeleton when loading */}
+      {/* Bounty amount - shows skeleton when loading, special message for zero */}
       <div className="h-[26px] mb-4 flex justify-center items-center">
-        {totalBountyAmount ? (
+        {totalBountyAmount && !isZeroAmount ? (
           <h2 className="text-[18px] text-green-400 font-medium animate-in fade-in duration-300">
             {bountyText}
+          </h2>
+        ) : isZeroAmount ? (
+          <h2 className="text-[18px] text-yellow-500 font-medium animate-in fade-in duration-300">
+            Discovering new bounties in open source contributions
           </h2>
         ) : (
           <div className="flex items-center space-x-2">

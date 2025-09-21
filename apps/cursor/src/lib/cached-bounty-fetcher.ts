@@ -7,6 +7,7 @@ import { unstable_cache } from "next/cache";
 import { redisCache } from "@/lib/redis-cache";
 import { parseBountyAmount, formatBountyAmount } from "@/utils/bounty-calculator";
 import type { BountyWithAmount } from "@/app/api/bounties/route";
+import { ensureBountyDataExists } from "@/lib/bounty-initialization-service";
 
 interface BountyItem {
   id: string;
@@ -121,11 +122,46 @@ const getCachedBountySnapshot = unstable_cache(
   async (): Promise<BountyItem[]> => {
     const cachedBounties = await redisCache.get("snapshots:latest");
     if (!cachedBounties) {
-      return [];
+      // Trigger initialization if no bounties are found
+      console.log("No cached bounties found, attempting to initialize...");
+      await ensureBountyDataExists();
+      
+      // Try to get data again after initialization
+      const retryBounties = await redisCache.get("snapshots:latest");
+      if (!retryBounties) {
+        console.log("No bounties available after initialization attempt");
+        return [];
+      }
+      
+      try {
+        return JSON.parse(retryBounties);
+      } catch (error) {
+        console.error("Error parsing bounty snapshot after initialization:", error);
+        return [];
+      }
     }
     
     try {
-      return JSON.parse(cachedBounties);
+      const bounties = JSON.parse(cachedBounties);
+      // Check if we have an empty array and trigger initialization
+      if (Array.isArray(bounties) && bounties.length === 0) {
+        console.log("Empty bounty array found, attempting to initialize...");
+        await ensureBountyDataExists();
+        
+        // Try to get data again after initialization
+        const retryBounties = await redisCache.get("snapshots:latest");
+        if (retryBounties) {
+          try {
+            const newBounties = JSON.parse(retryBounties);
+            return Array.isArray(newBounties) ? newBounties : [];
+          } catch (error) {
+            console.error("Error parsing bounty snapshot after retry:", error);
+            return [];
+          }
+        }
+      }
+      
+      return bounties;
     } catch (error) {
       console.error("Error parsing bounty snapshot:", error);
       return [];
@@ -260,12 +296,19 @@ export const getCachedBounties = unstable_cache(
       const endIndex = startIndex + limit;
       const paginatedBounties = sortedBounties.slice(startIndex, endIndex);
 
-      // Get totals
+      // Get totals for amount calculation
       const totals = await getCachedBountyTotals(language);
+      
+      // Use the actual filtered bounty count for pagination, not just those with amounts
+      const actualTotalCount = filteredBounties.length;
 
       return {
         bounties: paginatedBounties,
-        total: totals,
+        total: {
+          count: actualTotalCount, // Use all bounties count for pagination
+          amount: totals.amount,   // Keep amount calculation from valid bounties only
+          formatted: totals.formatted
+        },
         cached: true,
         timestamp: new Date().toISOString(),
       };
