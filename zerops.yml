@@ -7,7 +7,10 @@ zerops:
         GITHUB_TOKEN: ${RUNTIME_GITHUB_TOKEN}
         BETTER_AUTH_SECRET: ${RUNTIME_BETTER_AUTH_SECRET}
         BETTER_AUTH_URL: ${RUNTIME_BETTER_AUTH_URL}
+        NEXT_PUBLIC_BETTER_AUTH_URL: ${RUNTIME_NEXT_PUBLIC_BETTER_AUTH_URL}
         NEXT_AUTH_URL: ${RUNTIME_NEXT_AUTH_URL}
+        GITHUB_CLIENT_ID: ${RUNTIME_GITHUB_CLIENT_ID}
+        GITHUB_CLIENT_SECRET: ${RUNTIME_GITHUB_CLIENT_SECRET}
       base: bun@1.2
       buildCommands:
         - bun install
@@ -20,7 +23,11 @@ zerops:
         GITHUB_TOKEN: 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 
         BETTER_AUTH_SECRET: 5541b356f52d2da2e7803219c753cf817637630fd83958a419e6729ce4e4f2e0
         BETTER_AUTH_URL: https://bounty.directory
+        NEXT_PUBLIC_BETTER_AUTH_URL: https://bounty.directory
         NEXT_AUTH_URL: https://bounty.directory
+        GITHUB_CLIENT_ID: Ov23lid6IaLm7IpTBsJR
+        RESEND_API_KEY: re_U9WFBjbN_CdXNxZHbWnqox4UyWLF3xV4c
+        GITHUB_CLIENT_SECRET: 839db838f07b4d53deacb1063558ba7c7a71aba3
       crontab:
         # Daily comprehensive bounty updates (additive caching)
         - command: "curl -X GET http://localhost:3000/api/cron/daily-bounty-update"
