@@ -55,13 +55,22 @@ export function AdCardSmall({ ad, small }: { ad: Ad; small?: boolean }) {
       <CardHeader className="p-0 space-y-1">
         <div className="flex items-center gap-2">
           <div className={cn("relative", small ? "w-4 h-4" : "w-6 h-6")}>
-            <Image
-              quality={100}
-              src={ad.logoUrl}
-              alt={`${ad.title} logo`}
-              fill
-              className="object-contain"
-            />
+            {ad.logoUrl ? (
+              <Image
+                quality={100}
+                src={ad.logoUrl}
+                alt={`${ad.title} logo`}
+                fill
+                className="object-contain"
+              />
+            ) : (
+              <div className={cn(
+                "bg-neutral-800 border border-dashed border-neutral-600 rounded flex items-center justify-center",
+                small ? "w-4 h-4" : "w-6 h-6"
+              )}>
+                <div className={cn("text-neutral-500", small ? "text-[8px]" : "text-xs")}>🏢</div>
+              </div>
+            )}
           </div>
           <CardTitle className={cn("truncate", small ? "text-xs" : "text-sm")}>
             {ad.title}

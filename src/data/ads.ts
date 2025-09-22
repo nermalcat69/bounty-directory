@@ -2,9 +2,9 @@ export interface Ad {
   id: string;
   title: string;
   description: string;
-  logoUrl: string;
+  logoUrl?: string;
   link: string;
-  imageUrl: string;
+  imageUrl?: string;
 }
 
 export const ads: Ad[] = [
@@ -17,6 +17,22 @@ export const ads: Ad[] = [
     imageUrl:
       "/ads-cover.png",
     link: "/advertise",
+  },
+  {
+    id: "empty-cover-ad",
+    title: "Your Ad Here - Cover",
+    description: "This ad slot is available for purchase. Contact us to feature your product or service here.",
+    // logoUrl: undefined, // No logo - will show empty placeholder
+    link: "/advertise",
+    // imageUrl: undefined, // No image - will show empty placeholder
+  },
+  {
+    id: "empty-logo-ad",
+    title: "Your Ad Here - Logo",
+    description: "This ad slot shows how it looks when only the logo is missing.",
+    // logoUrl: undefined, // No logo - will show empty placeholder
+    link: "/advertise",
+    imageUrl: "/ad-cover.png", // Has image but no logo
   },
   // {
   //   id: "speakeasy",

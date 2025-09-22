@@ -9,21 +9,29 @@ The application uses a **dual cache strategy**:
 1. **Hard Refresh on Build** (Destructive)
 2. **Additive Cron Jobs** (Preserves existing data)
 
-## 🔄 Hard Refresh on Build
+## 🔄 Manual Cache Refresh
 
 ### When it happens:
-- Every `npm run build` or `pnpm build`
-- Automatically triggered by the post-build script
+- **Manual trigger only** via `npm run cache:clear` or `pnpm cache:clear`
+- No longer automatically triggered on build
 
 ### What it does:
 - Clears **ALL** existing cache
 - Forces fresh data fetch from GitHub API
-- Ensures clean state after deployments
+- Ensures clean state when manually requested
 
 ### Implementation:
 - **Script**: `scripts/post-build-refresh.js`
 - **Endpoint**: `POST /api/bounties/refresh` with `clearCache: true`
-- **Triggered by**: `package.json` build script
+- **Triggered by**: Manual execution of `cache:clear` script
+
+### Usage:
+```bash
+# Clear cache manually when needed
+npm run cache:clear
+# or
+pnpm cache:clear
+```
 
 ### Cache keys cleared:
 - `snapshots:latest`
