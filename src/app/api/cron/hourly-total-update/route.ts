@@ -1,150 +1,99 @@
 import { NextResponse } from "next/server";
-import { GitHubAPI } from "@/lib/github";
+import { GitHubAPI, extractLanguageFromRepository } from "@/lib/github";
 import { redisCache } from "@/lib/redis-cache";
 import { parseBountyAmount, formatBountyAmount } from "@/utils/bounty-calculator";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { isSpamIssue, logSpamUserFiltered } from "@/utils/spam-filter";
+import { BountyDeduplicationService } from "@/lib/bounty-deduplication-service";
 
 export async function GET() {
   try {
+    console.log("🚀 Starting hourly total bounty update...");
+    
     // Verify this is a legitimate cron request
     const authHeader = process.env.CRON_SECRET;
+    // if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // }
     
-    console.log("Starting hourly total rewards update...");
+    // Use existing cache data instead of fetching new data to prevent conflicts
+    // This job focuses only on recalculating totals from cached bounties
+    const currentBounties = await BountyDeduplicationService.getCurrentBounties();
     
-    const github = new GitHubAPI(process.env.GITHUB_TOKEN);
-    
-    // Calculate cutoff date (365 days ago to get comprehensive data)
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - 365);
-    const cutoffISO = cutoffDate.toISOString().split('T')[0];
-    
-    // Build search queries
-    const bountyQuery = `label:"💎 Bounty" state:open created:>=${cutoffISO}`;
-    const dollarQuery = `state:open created:>=${cutoffISO} "$" in:labels`;
-    const antiworkQuery = `org:antiwork state:open created:>=${cutoffISO} "$" in:labels`;
+    if (currentBounties.length === 0) {
+      console.log("No bounties found in cache, skipping total calculation");
+      return NextResponse.json({
+        success: true,
+        message: "No bounties in cache to calculate totals from",
+        result: {
+          totalAmount: 0,
+          formattedTotal: "$0",
+          count: 0,
+          lastUpdated: new Date().toISOString()
+        }
+      });
+    }
     
     let totalAmount = 0;
-    let processed = 0;
+    let validBountiesCount = 0;
     const seenIssues = new Set<number>();
     
-    // Function to process an issue and extract bounty amount
-    const processIssue = (issue: any) => {
-      if (seenIssues.has(issue.id)) {
-        return;
-      }
-      seenIssues.add(issue.id);
-      
-      // Filter out spam users
-      if (isSpamIssue(issue)) {
-        logSpamUserFiltered(issue.user.login, issue.id);
-        return;
+    // Calculate totals from cached bounties
+    for (const bounty of currentBounties) {
+      // Skip duplicates (shouldn't happen with deduplication service, but safety check)
+      if (seenIssues.has(Number(bounty.id))) {
+        continue;
       }
       
-      processed++;
+      seenIssues.add(Number(bounty.id));
       
-      // Extract bounty amount from labels
-      let bountyAmount = null;
-      
-      for (const label of issue.labels) {
-        const labelName = label.name;
-        
-        const priorityPatterns = [
-          /\$(\d+(?:\.\d+)?[km]?)/i,
-          /(\d+(?:\.\d+)?[km]?)\s*usd/i,
-          /(\d+(?:\.\d+)?[km]?)\s*dollars?/i,
-          /bounty[:\s]*\$?(\d+(?:\.\d+)?[km]?)/i,
-          /reward[:\s]*\$?(\d+(?:\.\d+)?[km]?)/i,
-          /prize[:\s]*\$?(\d+(?:\.\d+)?[km]?)/i
-        ];
-        
-        for (const pattern of priorityPatterns) {
-          const match = labelName.match(pattern);
-          if (match) {
-            bountyAmount = `$${match[1]}`;
-            break;
-          }
+      if (bounty.amount) {
+        const amount = parseBountyAmount(bounty.amount);
+        if (amount > 0) {
+          totalAmount += amount;
+          validBountiesCount++;
         }
-        
-        if (!bountyAmount) {
-          const numberMatch = labelName.match(/(\d+(?:\.\d+)?[km]?)/i);
-          if (numberMatch) {
-            const value = numberMatch[1].toLowerCase();
-            const numericPart = parseFloat(value.replace(/[km]/i, ''));
-            const hasK = value.includes('k');
-            const hasM = value.includes('m');
-            
-            let baseNumber = numericPart;
-            if (hasK) baseNumber *= 1000;
-            if (hasM) baseNumber *= 1000000;
-            
-            if (baseNumber >= 1 && baseNumber <= 100000000) {
-              bountyAmount = `$${value}`;
-            }
-          }
-        }
-        
-        if (bountyAmount) break;
       }
-      
-      if (bountyAmount) {
-        totalAmount += parseBountyAmount(bountyAmount);
-      }
-    };
+    }
     
-    // Function to fetch bounties for a specific query
-    const fetchBountiesForQuery = async (query: string, type: string) => {
-      try {
-        console.log(`Fetching ${type}...`);
-        const response = await github.searchIssues(query);
-        const issues = response.data.items;
-        
-        for (const issue of issues) {
-          processIssue(issue);
-        }
-        
-        console.log(`Processed ${issues.length} issues from ${type}`);
-      } catch (error) {
-        console.error(`Error fetching ${type}:`, error);
-      }
-    };
-    
-    // Fetch all types of bounties (only for total calculation)
-    await fetchBountiesForQuery(bountyQuery, "bounty labels");
-    await fetchBountiesForQuery(dollarQuery, "dollar labels");
-    await fetchBountiesForQuery(antiworkQuery, "antiwork dollar labels");
-    
-    // Update only the total amount in Redis (24 hour expiration to match API expectations)
     const formattedTotal = formatBountyAmount(totalAmount);
+    const timestamp = new Date().toISOString();
+    
+    // Update Redis with the total amount (24-hour expiration)
     const totalData = {
-      count: processed,
       amount: totalAmount,
       formatted: formattedTotal,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: timestamp,
+      count: currentBounties.length,
+      validBounties: validBountiesCount
     };
-    
     await redisCache.setex("bounty:total", 86400, JSON.stringify(totalData));
     
-    // Revalidate ISR pages and tags to use fresh data
-    revalidateTag('total-bounty-amount');
-    revalidateTag('homepage');
-    revalidatePath('/');
+    // Revalidate ISR pages and tags
+    revalidateTag("bounty-totals");
+    revalidateTag("homepage");
+    revalidatePath("/");
     
-    console.log(`Hourly total update complete: ${processed} bounties, total: ${formattedTotal}`);
+    console.log(`Hourly total update complete: ${formattedTotal} from ${validBountiesCount}/${currentBounties.length} bounties`);
     
     return NextResponse.json({
       success: true,
       message: "Hourly total update completed successfully",
-      result: totalData
+      result: {
+        totalAmount,
+        formattedTotal,
+        count: currentBounties.length,
+        validBounties: validBountiesCount,
+        lastUpdated: timestamp
+      }
     });
-
+    
   } catch (error) {
-    console.error("Error in hourly total update:", error);
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined
-    }, { status: 500 });
+    console.error("Hourly total update error:", error);
+    return NextResponse.json(
+      { success: false, error: "Hourly total update failed" },
+      { status: 500 }
+    );
   }
 }
 

@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { redisCache } from "@/lib/redis-cache";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { updateBountyCacheForIssue } from "@/lib/postgres-cache-updater";
+import { BountyDeduplicationService } from "@/lib/bounty-deduplication-service";
 import crypto from "crypto";
 
 // Verify GitHub webhook signature
@@ -115,13 +116,45 @@ async function handleIssueEvent(data: any) {
   if (isBountyIssue) {
     console.log(`Bounty issue ${action}: ${issue.html_url}`);
     
-    // Update Redis cache intelligently
-    const cacheUpdateResult = await updateBountyCacheForIssue(issue, action);
-    
-    if (cacheUpdateResult.success) {
-      console.log('Redis cache updated successfully:', cacheUpdateResult.updated);
-    } else {
-      console.error('Redis cache update failed:', cacheUpdateResult.errors);
+    if (action === "closed") {
+      // Remove closed bounty from cache
+      await BountyDeduplicationService.removeBountyFromCache(issue.id);
+      console.log(`Removed closed bounty ${issue.id} from cache`);
+    } else if (["opened", "edited", "labeled", "unlabeled", "reopened"].includes(action)) {
+      // Convert issue to bounty format and update cache
+      const bountyData = {
+        id: issue.id,
+        title: issue.title,
+        html_url: issue.html_url,
+        repo: repository.full_name,
+        user_login: issue.user.login,
+        user_avatar_url: issue.user.avatar_url,
+        amount: issue.labels?.find((label: any) => 
+          label.name.includes('$') || 
+          label.name.includes('💎 Bounty') ||
+          /bounty|reward|prize/i.test(label.name)
+        )?.name || "",
+        language: repository.language || "Unknown",
+        labels: issue.labels?.map((label: any) => ({
+          name: label.name,
+          color: label.color
+        })) || [],
+        state: issue.state,
+        created_at: issue.created_at,
+        updated_at: issue.updated_at,
+        body: issue.body?.substring(0, 500) || "",
+        assignee: issue.assignee?.login || null,
+        comments: issue.comments || 0
+      };
+      
+      // Update cache with single bounty (merge mode)
+      const cacheResult = await BountyDeduplicationService.updateSnapshotsCache([bountyData], 'merge');
+      
+      if (cacheResult.success) {
+        console.log(`Updated cache for bounty ${issue.id}: ${cacheResult.message}`);
+      } else {
+        console.error(`Failed to update cache for bounty ${issue.id}: ${cacheResult.message}`);
+      }
     }
     
     // Revalidate ISR pages and tags based on action

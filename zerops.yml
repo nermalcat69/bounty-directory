@@ -31,7 +31,7 @@ zerops:
         # Log cron activity
         - command: "date >> /var/log/cron.log"
           timing: "0 * * * *"
-      base: nodejs@20
+      base: bun@1.2
       ports:
         - port: 3000
           httpSupport: true

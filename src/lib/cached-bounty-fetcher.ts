@@ -228,7 +228,7 @@ export const getCachedBounties = unstable_cache(
     const {
       page = 1,
       limit = 20,
-      sort = 'amount',
+      sort = 'created',
       order = 'desc',
       language
     } = options;

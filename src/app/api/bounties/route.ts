@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     
     const page = parseInt(searchParams.get('page') || '1');
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50); // Cap at 50 for performance
-    const sort = searchParams.get('sort') || 'amount';
+    const sort = searchParams.get('sort') || 'created';
     const order = searchParams.get('order') || 'desc';
     const language = searchParams.get('language');
     

@@ -192,7 +192,7 @@ export function BountyList({ selectedLanguage, onTotalBountiesChange, selectedSo
             const nextPageOptions = {
               page: nextPage,
               limit: ITEMS_PER_LOAD,
-              sort: selectedSort === "recent" ? "updated" : selectedSort === "least-attempts" ? "comments" : "updated",
+              sort: selectedSort === "recent" ? "created" : selectedSort === "least-attempts" ? "comments" : "created",
               order: selectedSort === "least-attempts" ? "asc" : "desc",
               language: selectedLanguage !== "all" ? selectedLanguage : undefined,
             };

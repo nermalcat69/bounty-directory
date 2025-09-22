@@ -3,8 +3,10 @@ import { GitHubAPI, extractLanguageFromRepository } from "@/lib/github";
 import { redisCache } from "@/lib/redis-cache";
 import { parseBountyAmount, formatBountyAmount } from "@/utils/bounty-calculator";
 import { revalidatePath, revalidateTag } from "next/cache";
-import { filterIssuesWithDollarLabels } from "@/utils/antiwork-filter";
+import { BountyInitializationService } from "@/lib/bounty-initialization-service";
+import { BountyDeduplicationService } from "@/lib/bounty-deduplication-service";
 import { isSpamIssue, logSpamUserFiltered } from "@/utils/spam-filter";
+import { filterIssuesWithDollarLabels } from "@/utils/antiwork-filter";
 import { bountyInitializationService } from "@/lib/bounty-initialization-service";
 
 export async function GET() {
@@ -87,6 +89,14 @@ export async function GET() {
         logSpamUserFiltered(issue.user.login, issue.id);
         return; // Skip spam issues
       }
+      
+      // Filter out issues from before 2024 (only show 2024+ issues)
+        const issueDate = new Date(issue.created_at);
+        const cutoffDate = new Date('2024-01-01T00:00:00.000Z');
+        if (issueDate < cutoffDate) {
+          console.log(`Filtered issue from ${issueDate.getFullYear()}: ${issue.html_url}`);
+          return;
+        }
       
       processed++;
       
@@ -212,39 +222,50 @@ export async function GET() {
     await fetchBountiesForQuery(dollarQuery, "dollar labels");
     await fetchBountiesForQuery(antiworkQuery, "antiwork dollar labels");
     
-    // Merge with existing data, removing duplicates and updating existing entries
-    // ADDITIVE BEHAVIOR: Preserves all older entries, only updates existing ones with new data
-    const existingBountiesMap = new Map(existingBounties.map(b => [b.id, b]));
+    // Use the deduplication service to safely merge with existing cache
+    const cacheResult = await BountyDeduplicationService.updateSnapshotsCache(
+      allBounties, 
+      'merge', // Merge with existing data (additive caching)
+      1800 // 30 minutes TTL
+    );
     
-    // Update existing bounties with new data (additive - keeps all old entries)
-    for (const newBounty of allBounties) {
-      existingBountiesMap.set(newBounty.id, newBounty);
+    if (!cacheResult.success) {
+      console.error("Failed to update cache:", cacheResult.message);
+      return NextResponse.json({
+        success: false,
+        error: cacheResult.message
+      }, { status: 500 });
     }
     
-    // Convert back to array and sort by updated_at (most recent first)
-    const mergedBounties = Array.from(existingBountiesMap.values())
-      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+    // Get the final merged bounties for total calculation
+    const finalBounties = await BountyDeduplicationService.getCurrentBounties();
     
     // Calculate total amount from all bounties
     let finalTotalAmount = 0;
-    for (const bounty of mergedBounties) {
+    let validBountiesCount = 0;
+    
+    for (const bounty of finalBounties) {
       if (bounty.amount) {
-        finalTotalAmount += parseBountyAmount(bounty.amount);
+        const amount = parseBountyAmount(bounty.amount);
+        if (amount > 0) {
+          finalTotalAmount += amount;
+          validBountiesCount++;
+        }
       }
     }
     
-    // Cache the merged results with shorter expiration (30 minutes)
-    await redisCache.setex("snapshots:latest", 1800, JSON.stringify(mergedBounties));
-        await redisCache.setex("snapshots:top100", 1800, JSON.stringify(mergedBounties.slice(0, 100)));
-    
-    // Cache the total amount
     const formattedTotal = formatBountyAmount(finalTotalAmount);
-    await redisCache.setex("bounty:total", 1800, JSON.stringify({
+    const timestamp = new Date().toISOString();
+    
+    // Cache total bounty amount
+    const totalData = {
       amount: finalTotalAmount,
       formatted: formattedTotal,
-      lastUpdated: new Date().toISOString(),
-      count: mergedBounties.length
-    }));
+      lastUpdated: timestamp,
+      count: finalBounties.length,
+      validBounties: validBountiesCount
+    };
+    await redisCache.setex("bounty:total", 1800, JSON.stringify(totalData));
     
     // Revalidate ISR pages and tags
     revalidateTag('bounties');
@@ -261,7 +282,7 @@ export async function GET() {
       message: "30-minute bounty update completed successfully",
       result: {
         newOrUpdated: processed,
-        totalBounties: mergedBounties.length,
+        totalBounties: finalBounties.length,
         totalAmount: finalTotalAmount,
         formattedTotal,
         lastUpdated: new Date().toISOString()

@@ -71,6 +71,14 @@ export class BountyInitializationService {
           return;
         }
 
+        // Filter out issues from before 2024 (only show 2024+ issues)
+        const issueDate = new Date(issue.created_at);
+        const cutoffDate = new Date('2024-01-01T00:00:00.000Z');
+        if (issueDate < cutoffDate) {
+          console.log(`Filtered issue from ${issueDate.getFullYear()}: ${issue.html_url}`);
+          return;
+        }
+
         // Extract bounty amount from labels first (faster)
         let bountyAmount = null;
         for (const label of issue.labels || []) {
@@ -181,8 +189,8 @@ export class BountyInitializationService {
       await fetchBountiesForQuery(dollarQuery, "dollar labels");
       await fetchBountiesForQuery(antiworkQuery, "antiwork dollar labels");
 
-      // Sort bounties by updated_at (most recent first)
-      allBounties.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+      // Sort bounties by created_at (most recent first)
+      allBounties.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       // Cache the results with 1 hour expiration
       await redisCache.setex("snapshots:latest", 3600, JSON.stringify(allBounties));

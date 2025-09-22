@@ -67,8 +67,8 @@ export function BountyListHybrid({
 
     try {
       const sortMapping: Record<string, { sort: string; order: string }> = {
-        recent: { sort: "updated", order: "desc" },
-        oldest: { sort: "updated", order: "asc" },
+        recent: { sort: "created", order: "desc" },
+        oldest: { sort: "created", order: "asc" },
         "highest-amount": { sort: "amount", order: "desc" },
         "lowest-amount": { sort: "amount", order: "asc" },
         "least-attempts": { sort: "comments", order: "asc" },
