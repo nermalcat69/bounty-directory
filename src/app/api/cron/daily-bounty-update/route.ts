@@ -5,6 +5,7 @@ import { parseBountyAmount, formatBountyAmount } from "@/utils/bounty-calculator
 import { revalidatePath, revalidateTag } from "next/cache";
 import { filterIssuesWithDollarLabels } from "@/utils/antiwork-filter";
 import { isSpamIssue, logSpamUserFiltered } from "@/utils/spam-filter";
+import { BountyDeduplicationService } from "@/lib/bounty-deduplication-service";
 
 export async function GET() {
   try {
@@ -171,25 +172,29 @@ export async function GET() {
       new Map(allBounties.map(bounty => [bounty.id, bounty])).values()
     );
     
-    // Merge with existing data, removing duplicates and updating existing entries
-    const existingBountiesMap = new Map(existingBounties.map((b: any) => [b.id, b]));
+    // Use BountyDeduplicationService to merge with existing cache (ADDITIVE)
+    // This preserves all existing bounties and adds/updates new ones
+    const updateResult = await BountyDeduplicationService.updateSnapshotsCache(
+      uniqueBounties,
+      'merge', // Use merge mode to preserve existing data
+      86400    // 24-hour TTL for daily updates
+    );
     
-    // Update existing bounties with new data
-    for (const newBounty of uniqueBounties) {
-      existingBountiesMap.set(newBounty.id, newBounty);
+    if (!updateResult.success) {
+      console.error("Failed to update cache via deduplication service:", updateResult.message);
+      throw new Error(updateResult.message);
     }
     
-    // Convert back to array and sort by updated_at (most recent first)
-    const mergedBounties = Array.from(existingBountiesMap.values())
-      .sort((a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+    // Get the final merged bounties for total calculation
+    const finalBounties = await BountyDeduplicationService.getCurrentBounties();
     
     // Calculate total amount from all bounties
     let finalTotalAmount = 0;
     let validBountiesCount = 0;
     
-    for (const bounty of mergedBounties) {
-      if ((bounty as any).amount) {
-        const amount = parseBountyAmount((bounty as any).amount);
+    for (const bounty of finalBounties) {
+      if (bounty.amount) {
+        const amount = parseBountyAmount(bounty.amount);
         if (amount > 0) {
           finalTotalAmount += amount;
           validBountiesCount++;
@@ -200,16 +205,12 @@ export async function GET() {
     const formattedTotal = formatBountyAmount(finalTotalAmount);
     const timestamp = new Date().toISOString();
     
-    // Cache the comprehensive results with longer expiration (24 hours)
-    await redisCache.setex("snapshots:latest", 86400, JSON.stringify(mergedBounties));
-        await redisCache.setex("snapshots:top100", 86400, JSON.stringify(mergedBounties.slice(0, 100)));
-    
     // Cache total bounty amount
     const totalData = {
       amount: finalTotalAmount,
       formatted: formattedTotal,
       lastUpdated: timestamp,
-      count: mergedBounties.length,
+      count: finalBounties.length,
       validBounties: validBountiesCount
     };
     await redisCache.setex("bounty:total", 86400, JSON.stringify(totalData));
@@ -227,7 +228,7 @@ export async function GET() {
       message: "Daily bounty update completed successfully",
       result: {
         newOrUpdated: uniqueBounties.length,
-        totalBounties: mergedBounties.length,
+        totalBounties: finalBounties.length,
         validBounties: validBountiesCount,
         totalAmount: finalTotalAmount,
         formattedTotal,

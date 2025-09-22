@@ -22,12 +22,15 @@ zerops:
         BETTER_AUTH_URL: https://bounty.directory
         NEXT_AUTH_URL: https://bounty.directory
       crontab:
-        # 30-minute bounty updates (additive caching)
-        - command: "curl -X GET http://localhost:3000/api/cron/30min-bounty-update"
-          timing: "*/30 * * * *"
-        # Hourly total updates (additive caching)  
-        - command: "curl -X GET http://localhost:3000/api/cron/hourly-total-update"
-          timing: "0 * * * *"
+        # Daily comprehensive bounty updates (additive caching)
+        - command: "curl -X GET http://localhost:3000/api/cron/daily-bounty-update"
+          timing: "0 2 * * *"
+        # Daily total updates (additive caching)
+        - command: "curl -X GET http://localhost:3000/api/cron/daily-total-update"
+          timing: "0 3 * * *"
+        # Hard refresh (clears all cache) - runs weekly on Sunday at 4 AM
+        - command: "curl -X GET http://localhost:3000/api/cron/hard-refresh"
+          timing: "0 4 * * 0"
         # Log cron activity
         - command: "date >> /var/log/cron.log"
           timing: "0 * * * *"

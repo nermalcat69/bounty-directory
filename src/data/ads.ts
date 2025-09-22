@@ -9,16 +9,6 @@ export interface Ad {
 
 export const ads: Ad[] = [
   {
-    id: "ad-cover",
-    title: "Buy Ad Spot",
-    description: "Buy ad spots to feature your product, This will keep us running and help us maintain the platform.",
-    logoUrl:
-      "https://hrefmb8g6y.ufs.sh/f/ewD33M5I6ExCeXir3G5I6ExCuKF4tOngsMoWvbGlSkjci18w",
-    imageUrl:
-      "/ads-cover.png",
-    link: "/advertise",
-  },
-  {
     id: "empty-cover-ad",
     title: "Your Ad Here - Cover",
     description: "This ad slot is available for purchase. Contact us to feature your product or service here.",
