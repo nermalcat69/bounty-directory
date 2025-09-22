@@ -1,106 +1,89 @@
 #!/usr/bin/env node
 
 /**
- * Post-build script that triggers a hard refresh to clear all cache
- * This ensures every build starts with fresh cache
+ * Post-build script that directly clears cache without making HTTP requests
+ * This ensures every build starts with fresh cache and works during build time
  */
 
-const https = require('https');
-const http = require('http');
+const path = require('path');
+const fs = require('fs');
 
-async function triggerHardRefresh() {
-  const baseUrl = process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}`
-    : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+async function clearCacheDirectly() {
+  console.log('🔄 Clearing cache after build...');
   
-  const url = `${baseUrl}/api/bounties/refresh`;
-  
-  console.log('🔄 Triggering hard refresh after build...');
-  console.log(`📍 Target URL: ${url}`);
-  
-  const postData = JSON.stringify({
-    clearCache: true,  // Hard refresh - clear all cache
-    force: true        // Force refresh even if data exists
-  });
-  
-  const options = {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Content-Length': Buffer.byteLength(postData),
-      'User-Agent': 'Post-Build-Script/1.0'
+  try {
+    // Import Redis cache module dynamically
+    const redisModulePath = path.join(process.cwd(), 'src', 'lib', 'redis-cache.ts');
+    
+    // Check if we can access Redis during build
+    if (process.env.NODE_ENV === 'production' && !process.env.REDIS_URL) {
+      console.log('⚠️  No Redis URL available during build - cache will be cleared on first request');
+      return { success: true, message: 'Cache clearing deferred to runtime' };
     }
-  };
-  
-  return new Promise((resolve, reject) => {
-    const client = url.startsWith('https') ? https : http;
     
-    const req = client.request(url, options, (res) => {
-      let data = '';
+    // Try to clear Redis cache if available
+    try {
+      // Dynamic import to avoid build-time issues
+      const { redisCache } = await import('../src/lib/redis-cache.js');
       
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
+      console.log('🗑️  Clearing Redis cache keys...');
+      await Promise.all([
+        redisCache.del("snapshots:latest"),
+        redisCache.del("snapshots:top100"), 
+        redisCache.del("bounty:total"),
+        redisCache.del("bounties:latest")
+      ]);
       
-      res.on('end', () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          console.log('✅ Hard refresh completed successfully');
-          console.log(`📊 Response: ${res.statusCode} ${res.statusMessage}`);
-          try {
-            const response = JSON.parse(data);
-            if (response.message) {
-              console.log(`💬 Message: ${response.message}`);
-            }
-            if (response.totalBounties) {
-              console.log(`🎯 Total bounties refreshed: ${response.totalBounties}`);
-            }
-          } catch (e) {
-            // Response might not be JSON, that's ok
-          }
-          resolve(data);
-        } else {
-          console.error(`❌ Hard refresh failed: ${res.statusCode} ${res.statusMessage}`);
-          console.error(`📄 Response: ${data}`);
-          reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
-        }
-      });
-    });
+      console.log('✅ Redis cache cleared successfully');
+      
+    } catch (redisError) {
+      console.log('⚠️  Redis not available during build - cache will be cleared on first request');
+      console.log(`   Redis error: ${redisError.message}`);
+    }
     
-    req.on('error', (err) => {
-      console.error('❌ Network error during hard refresh:', err.message);
-      // Don't fail the build for network errors - cache will be refreshed on first request
-      console.log('⚠️  Build will continue, cache will be refreshed on first request');
-      resolve('Network error - continuing build');
-    });
+    // Create a cache invalidation marker file
+    const markerPath = path.join(process.cwd(), '.cache-invalidated');
+    fs.writeFileSync(markerPath, new Date().toISOString());
+    console.log('📝 Created cache invalidation marker');
     
-    req.on('timeout', () => {
-      console.error('❌ Timeout during hard refresh');
-      console.log('⚠️  Build will continue, cache will be refreshed on first request');
-      req.destroy();
-      resolve('Timeout - continuing build');
-    });
+    console.log('✅ Post-build cache clearing completed');
     
-    // Set timeout to 30 seconds
-    req.setTimeout(30000);
+    return { 
+      success: true, 
+      message: 'Cache clearing completed',
+      timestamp: new Date().toISOString()
+    };
     
-    req.write(postData);
-    req.end();
-  });
+  } catch (error) {
+    console.error('❌ Error during cache clearing:', error.message);
+    console.log('⚠️  Build will continue, cache will be cleared on first request');
+    
+    return { 
+      success: false, 
+      message: `Cache clearing failed: ${error.message}`,
+      timestamp: new Date().toISOString()
+    };
+  }
 }
 
 // Only run if this script is executed directly (not imported)
 if (require.main === module) {
-  triggerHardRefresh()
-    .then(() => {
-      console.log('🎉 Post-build refresh completed');
+  clearCacheDirectly()
+    .then((result) => {
+      console.log('🎉 Post-build cache clearing completed');
+      if (result.success) {
+        console.log(`✅ ${result.message}`);
+      } else {
+        console.log(`⚠️  ${result.message}`);
+      }
       process.exit(0);
     })
     .catch((err) => {
-      console.error('💥 Post-build refresh failed:', err.message);
+      console.error('💥 Post-build cache clearing failed:', err.message);
       // Don't fail the build - cache will be refreshed on first request
       console.log('⚠️  Build completed successfully, cache will be refreshed on first request');
       process.exit(0);
     });
 }
 
-module.exports = { triggerHardRefresh };
+module.exports = { clearCacheDirectly };

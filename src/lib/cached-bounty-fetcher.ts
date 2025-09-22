@@ -8,6 +8,8 @@ import { redisCache } from "@/lib/redis-cache";
 import { parseBountyAmount, formatBountyAmount } from "@/utils/bounty-calculator";
 import type { BountyWithAmount } from "@/app/api/bounties/route";
 import { ensureBountyDataExists } from "@/lib/bounty-initialization-service";
+import { existsSync, unlinkSync } from "fs";
+import { join } from "path";
 
 interface BountyItem {
   id: string;
@@ -43,6 +45,40 @@ const CACHE_TTL = {
   BOUNTY_TOTAL: 60 * 5, // 5 minutes for totals
   BOUNTY_SNAPSHOT: 60 * 10, // 10 minutes for full snapshot (reduced for fresher data)
 };
+
+/**
+ * Check for build-time cache invalidation marker and clear cache if found
+ */
+async function checkAndClearBuildTimeInvalidation(): Promise<boolean> {
+  try {
+    const markerPath = join(process.cwd(), '.cache-invalidated');
+    if (existsSync(markerPath)) {
+      console.log("Found build-time cache invalidation marker, clearing cache...");
+      
+      // Clear Redis cache
+      await Promise.all([
+        redisCache.del("snapshots:latest"),
+        redisCache.del("snapshots:top100"),
+        redisCache.del("bounty:total"),
+        redisCache.del("bounties:latest")
+      ]);
+      
+      // Remove the marker file
+      try {
+        unlinkSync(markerPath);
+        console.log("Cache invalidation marker removed");
+      } catch (error) {
+        console.warn("Could not remove cache invalidation marker:", error);
+      }
+      
+      return true; // Cache was cleared
+    }
+    return false; // No marker found
+  } catch (error) {
+    console.error("Error checking build-time cache invalidation:", error);
+    return false;
+  }
+}
 
 // Helper function to extract amount from labels
 function extractAmountFromLabels(labelsData: string | null | undefined | any[]): string | null {
@@ -120,6 +156,9 @@ function extractAmountFromLabels(labelsData: string | null | undefined | any[]):
  */
 const getCachedBountySnapshot = unstable_cache(
   async (): Promise<BountyItem[]> => {
+    // Check for build-time cache invalidation first
+    await checkAndClearBuildTimeInvalidation();
+    
     const cachedBounties = await redisCache.get("snapshots:latest");
     if (!cachedBounties) {
       // Trigger initialization if no bounties are found

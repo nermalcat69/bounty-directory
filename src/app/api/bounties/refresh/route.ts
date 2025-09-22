@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { bountyInitializationService } from "@/lib/bounty-initialization-service";
 import { revalidateTag, revalidatePath } from "next/cache";
 import { redisCache } from "@/lib/redis-cache";
+import { existsSync, unlinkSync } from "fs";
+import { join } from "path";
 
 /**
  * Manual bounty data refresh endpoint
@@ -29,6 +31,26 @@ export async function POST(request: Request) {
     }
 
     const { force = false, clearCache = true } = options as { force?: boolean; clearCache?: boolean };
+
+    // Check for cache invalidation marker from build-time
+    const markerPath = join(process.cwd(), '.cache-invalidated');
+    const hasBuildTimeInvalidation = existsSync(markerPath);
+    
+    if (hasBuildTimeInvalidation) {
+      console.log("Found build-time cache invalidation marker, clearing cache...");
+      await redisCache.del("snapshots:latest");
+      await redisCache.del("snapshots:top100");
+      await redisCache.del("bounty:total");
+      await redisCache.del("bounties:latest");
+      
+      // Remove the marker file
+      try {
+        unlinkSync(markerPath);
+        console.log("Cache invalidation marker removed");
+      } catch (error) {
+        console.warn("Could not remove cache invalidation marker:", error);
+      }
+    }
 
     // Clear cache by default for hard refresh (can be disabled by setting clearCache: false)
     if (clearCache) {
