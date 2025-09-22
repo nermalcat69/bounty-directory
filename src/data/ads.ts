@@ -13,7 +13,7 @@ export const ads: Ad[] = [
     title: "Your Ad Here - Cover",
     description: "This ad slot is available for purchase. Contact us to feature your product or service here.",
     // logoUrl: undefined, // No logo - will show empty placeholder
-    link: "/advertise",
+    link: "https://buy.polar.sh/polar_cl_t6Apzhgk3hQXiYQNuWeryX6PC17mLFmpNrYE11Ws87G",
     // imageUrl: undefined, // No image - will show empty placeholder
   },
   {
@@ -21,7 +21,7 @@ export const ads: Ad[] = [
     title: "Your Ad Here - Logo",
     description: "This ad slot shows how it looks when only the logo is missing.",
     // logoUrl: undefined, // No logo - will show empty placeholder
-    link: "/advertise",
+    link: "https://buy.polar.sh/polar_cl_t6Apzhgk3hQXiYQNuWeryX6PC17mLFmpNrYE11Ws87G",
     imageUrl: "/ad-cover.png", // Has image but no logo
   },
   // {

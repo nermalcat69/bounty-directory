@@ -1,86 +1,97 @@
-import Image from "next/image";
-
 export const metadata = {
-  title: "About Bounty Directory",
-  description: "Why we built Bounty Directory",
+  title: "How to Attempt Issues - Bounty Directory",
+  description: "Learn how to properly attempt bounty issues without asking permission",
 };
 
-export default function About() {
+export default function HowToAttemptIssues() {
   return (
     <div className="flex flex-col items-center justify-center max-w-screen-md mx-auto px-6 py-12">
       <h1 className="text-4xl mb-12 mt-20 text-center">
-        Why We Built <br />
-        Bounty Directory
+        How to Attempt Issues
       </h1>
 
       <div className="space-y-12 mt-10">
         <section>
           <p className="text-[#878787] leading-relaxed text-sm">
-            Our journey with Cursor has been transformative. As team of one
-            developer and a designer, we've experienced firsthand how Cursor
-            significantly accelerated our development process. This efficiency
-            boost gave us the bandwidth to build our two startups,{" "}
-            <a
-              href="https://go.midday.ai/8cX3F4o"
-              className="text-primary border-border border-dashed border-b-[1px]"
-            >
-              Midday
-            </a>{" "}
-            and{" "}
-            <a
-              href="https://go.midday.ai/NnI1CUO"
-              className="text-primary border-border border-dashed border-b-[1px]"
-            >
-              Languine
-            </a>{" "}
-            with incredible velocity.
+            <span className="font-medium">Don't ask "Can I work on this?"</span> Instead, do your research first. 
+            Check if anyone else is already working on it, then dive right in! This guide will show you 
+            exactly how to properly check if an issue is available and start working on it.
           </p>
         </section>
 
         <section>
-          <h2 className="text-xl mb-2">Our Approach</h2>
+          <h2 className="text-xl mb-2">Step 1: Check for Existing Work</h2>
           <p className="text-[#878787] leading-relaxed text-sm">
-            As a bootstrapped company, we believe in sustainable growth and
-            maintaining full control over our product vision. We're building our
-            platforms thoughtfully, prioritizing user needs over rapid scaling.
-            With Midday, we're streamlining business operations, while with
-            Languine, we're building localization infrastructure that helps
-            fast-paced startups reach global audiences without slowing down
-            their development velocity.
+            Before starting, always check if someone else is already working on the issue:
+          </p>
+          <ul className="text-[#878787] leading-relaxed text-sm mt-2 ml-4 space-y-1">
+            <li>• <span className="font-medium">Pull Requests:</span> Look for open PRs that reference the issue</li>
+            <li>• <span className="font-medium">Recent Comments:</span> Check if someone claimed they're working on it</li>
+            <li>• <span className="font-medium">Assignees:</span> See if the issue is assigned to someone</li>
+            <li>• <span className="font-medium">Linked Branches:</span> Look for development branches related to the issue</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 className="text-xl mb-2">Step 2: Start Working</h2>
+          <p className="text-[#878787] leading-relaxed text-sm">
+            If the coast is clear, jump right in:
+          </p>
+          <ul className="text-[#878787] leading-relaxed text-sm mt-2 ml-4 space-y-1">
+            <li>• <span className="font-medium">Fork the repository</span> and create a new branch</li>
+            <li>• <span className="font-medium">Comment on the issue</span> that you're working on it (optional but courteous)</li>
+            <li>• <span className="font-medium">Start coding</span> and make your changes</li>
+            <li>• <span className="font-medium">Submit a PR</span> when ready, referencing the issue</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 className="text-xl mb-2">Step 3: Handle Conflicts</h2>
+          <p className="text-[#878787] leading-relaxed text-sm">
+            If you discover someone else is working on it:
+          </p>
+          <ul className="text-[#878787] leading-relaxed text-sm mt-2 ml-4 space-y-1">
+            <li>• <span className="font-medium">Check their progress:</span> How recent is their work?</li>
+            <li>• <span className="font-medium">Consider collaboration:</span> Reach out to work together</li>
+            <li>• <span className="font-medium">Find another issue:</span> There are plenty of bounties available</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 className="text-xl mb-2">Best Practices</h2>
+          <p className="text-[#878787] leading-relaxed text-sm">
+            <span className="font-medium">Do:</span> Research thoroughly before starting, read the issue description completely, 
+            check the repository's contributing guidelines, test your solution thoroughly, write clear commit messages, 
+            and include tests if applicable.
+          </p>
+          <p className="text-[#878787] leading-relaxed text-sm mt-2">
+            <span className="font-medium">Don't:</span> Ask "Can I work on this?" without research, start work on assigned issues, 
+            ignore existing pull requests, submit incomplete solutions, ignore the project's code style, 
+            or abandon work without notice.
           </p>
         </section>
 
         <section>
-          <h2 className="text-xl mb-2">Open Source Commitment</h2>
-          <p className="text-[#878787] leading-relaxed text-sm">
-            We're deeply committed to open source principles. Both Midday and
-            Languine are being built in public, with transparency at their core.
-            We believe that collaboration with the community leads to better
-            products, and we're proud to contribute back to the open source
-            ecosystem. This commitment remains central to our mission, even as
-            we grow and evolve.
-          </p>
+          <h2 className="text-xl mb-2">Red Flags - Don't Start Work If:</h2>
+          <ul className="text-[#878787] leading-relaxed text-sm ml-4 space-y-1">
+            <li>• There's an open PR addressing the issue (even if it's a draft)</li>
+            <li>• Someone commented they're working on it within the last 7 days</li>
+            <li>• The issue is assigned to someone</li>
+            <li>• There are active development branches referencing the issue</li>
+          </ul>
         </section>
 
         <section>
-          <h2 className="text-xl mb-2">Follow Our Journey</h2>
+          <h2 className="text-xl mb-2">Still Have Questions?</h2>
           <p className="text-[#878787] leading-relaxed text-sm">
-            Follow{" "}
+            Join our{" "}
             <a
-              href="https://x.com/pontusab"
+              href="https://discord.gg/gpRxmW63JW"
               className="text-primary hover:underline"
             >
-              @pontusab
+              Discord community
             </a>{" "}
-            and{" "}
-            <a
-              href="https://x.com/viktorhofte"
-              className="text-primary hover:underline"
-            >
-              @viktorhofte
-            </a>{" "}
-            on X to stay updated with our latest developments on both Midday and
-            Languine.
+            to get help, discuss bounties, and connect with other developers working on open source projects.
           </p>
         </section>
       </div>

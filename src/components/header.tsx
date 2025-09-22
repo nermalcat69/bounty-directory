@@ -12,7 +12,7 @@ const navigationLinks = [
   { href: "/freelance", label: "Freelance" },
   { href: "/jobs", label: "Jobs" },
   { href: "/faqs", label: "FAQs" },
-  { href: "/advertise", label: "Advertise" },
+  { href: "https://buy.polar.sh/polar_cl_t6Apzhgk3hQXiYQNuWeryX6PC17mLFmpNrYE11Ws87G", label: "Advertise" },
   { href: "/about", label: "About" },
   { href: "https://betterstack.com", label: "Status" },
 ] as const;

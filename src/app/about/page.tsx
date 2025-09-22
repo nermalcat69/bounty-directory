@@ -1,8 +1,8 @@
 import Image from "next/image";
 
 export const metadata = {
-  title: "About Bounty Directory",
-  description: "Why we built Bounty Directory",
+  title: "About Bounties Directory",
+  description: "Why we built Bounties Directory",
 };
 
 export default function About() {
@@ -10,55 +10,19 @@ export default function About() {
     <div className="flex flex-col items-center justify-center max-w-screen-md mx-auto px-6 py-12">
       <h1 className="text-4xl mb-12 mt-20 text-center">
         Why We Built <br />
-        Bounty Directory
+        Bounties Directory
       </h1>
 
       <div className="space-y-12 mt-10">
         <section>
           <p className="text-[#878787] leading-relaxed text-sm">
-            Our journey with Cursor has been transformative. As team of one
-            developer and a designer, we've experienced firsthand how Cursor
-            significantly accelerated our development process. This efficiency
-            boost gave us the bandwidth to build our two startups,{" "}
-            <a
-              href="https://go.midday.ai/8cX3F4o"
-              className="text-primary border-border border-dashed border-b-[1px]"
-            >
-              Midday
-            </a>{" "}
-            and{" "}
-            <a
-              href="https://go.midday.ai/NnI1CUO"
-              className="text-primary border-border border-dashed border-b-[1px]"
-            >
-              Languine
-            </a>{" "}
-            with incredible velocity.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-xl mb-2">Our Approach</h2>
-          <p className="text-[#878787] leading-relaxed text-sm">
-            As a bootstrapped company, we believe in sustainable growth and
-            maintaining full control over our product vision. We're building our
-            platforms thoughtfully, prioritizing user needs over rapid scaling.
-            With Midday, we're streamlining business operations, while with
-            Languine, we're building localization infrastructure that helps
-            fast-paced startups reach global audiences without slowing down
-            their development velocity.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-xl mb-2">Open Source Commitment</h2>
-          <p className="text-[#878787] leading-relaxed text-sm">
-            We're deeply committed to open source principles. Both Midday and
-            Languine are being built in public, with transparency at their core.
-            We believe that collaboration with the community leads to better
-            products, and we're proud to contribute back to the open source
-            ecosystem. This commitment remains central to our mission, even as
-            we grow and evolve.
+            Bounties Directory was born from a simple idea: helping builders,
+            hackers, and open source contributors discover opportunities to earn
+            while they create. Too many bounty programs, grants, and open source
+            incentives are scattered across different platforms making it hard
+            for developers to find the right opportunities quickly.{" "}
+            <span className="font-medium">Bounties Directory</span> brings them
+            all into one place.
           </p>
         </section>
 
@@ -67,27 +31,41 @@ export default function About() {
           <p className="text-[#878787] leading-relaxed text-sm">
             Follow{" "}
             <a
+              href="https://x.com/arjunaditya_"
+              className="text-primary hover:underline"
+            >
+              @arjunaditya_
+            </a>{" "}
+            on X to stay updated with the latest bounties, product updates, and
+            community highlights.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-xl mb-2">Acknowledgment</h2>
+          <p className="text-[#878787] leading-relaxed text-sm">
+            The initial version of Bounties Directory was forked from{" "}
+            <a
+              href="https://cursor.directory"
+              className="text-primary hover:underline"
+            >
+              cursor.directory
+            </a>{" "}
+            by{" "}
+            <a
               href="https://x.com/pontusab"
               className="text-primary hover:underline"
             >
               @pontusab
-            </a>{" "}
-            and{" "}
-            <a
-              href="https://x.com/viktorhofte"
-              className="text-primary hover:underline"
-            >
-              @viktorhofte
-            </a>{" "}
-            on X to stay updated with our latest developments on both Midday and
-            Languine.
+            </a>
+            . We're grateful to their work.
           </p>
         </section>
       </div>
 
       <Image
-        src="https://midday.ai/cdn-cgi/image/width=1920,quality=80//_next/static/media/founders.c6158766.png"
-        alt="Midday founders"
+        src="https://bounties.directory/og-image.png"
+        alt="Bounties Directory"
         width={1920}
         height={1080}
         className="rounded-lg mb-12 mt-12"

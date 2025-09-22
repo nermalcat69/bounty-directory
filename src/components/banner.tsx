@@ -21,7 +21,7 @@ export function Banner() {
   const banners = [
     {
       id: "buy-ad-spot",
-      href: "/advertise",
+      href: "https://buy.polar.sh/polar_cl_t6Apzhgk3hQXiYQNuWeryX6PC17mLFmpNrYE11Ws87G",
       logo: (
         <svg
           xmlns="http://www.w3.org/2000/svg"

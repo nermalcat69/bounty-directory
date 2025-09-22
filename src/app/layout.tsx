@@ -1,4 +1,3 @@
-import { Banner } from "@/components/banner";
 import "./globals.css";
 import { Header } from "@/components/header";
 import { GlobalModals } from "@/components/modals/global-modals";
@@ -121,8 +120,6 @@ export default function RootLayout({
                 <PlusIcon className="w-4 h-4" />
               </Link>
             </Button>
-
-            <Banner />
             <Toaster />
             <GlobalModals />
           </NuqsAdapter>
