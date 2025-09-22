@@ -1,0 +1,13 @@
+# Robots.txt for Bounty Directory
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://yourdomain.com/sitemap.xml
+
+# Disallow admin or sensitive areas if needed
+# Disallow: /admin/
+# Disallow: /api/
+
+# Allow all search engines to crawl the site
+# This is a public bounty directory, so we want good SEO

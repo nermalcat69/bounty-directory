@@ -21,7 +21,7 @@ export function Banner() {
   const banners = [
     {
       id: "buy-ad-spot",
-      href: "https://coderabbit.link/cdir",
+      href: "/advertise",
       logo: (
         <svg
           xmlns="http://www.w3.org/2000/svg"

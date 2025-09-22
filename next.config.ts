@@ -24,6 +24,12 @@ const nextConfig: NextConfig = {
         hostname: 'midday.ai',
         port: '',
         pathname: '/**'
+      },
+      {
+        protocol: 'https',
+        hostname: 'hrefmb8g6y.ufs.sh',
+        port: '',
+        pathname: '/**'
       }
     ]
   },
