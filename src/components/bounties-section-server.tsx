@@ -7,7 +7,7 @@ export async function BountiesSectionServer() {
     const bountyData = await fetchBountiesForISR({
       page: 1,
       limit: 30,
-      sort: 'updated',
+      sort: 'created',
       order: 'desc'
     });
 

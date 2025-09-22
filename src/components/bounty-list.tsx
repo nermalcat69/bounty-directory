@@ -84,7 +84,7 @@ export function BountyList({ selectedLanguage, onTotalBountiesChange, selectedSo
         // Map frontend sort values to API parameters
         switch (selectedSort) {
           case "recent":
-            params.append("sort", "updated");
+            params.append("sort", "created");
             params.append("order", "desc");
             break;
           case "least-attempts":
@@ -92,7 +92,7 @@ export function BountyList({ selectedLanguage, onTotalBountiesChange, selectedSo
             params.append("order", "asc");
             break;
           default:
-            params.append("sort", "updated");
+            params.append("sort", "created");
             params.append("order", "desc");
         }
       }

@@ -15,7 +15,7 @@ export async function BountiesFeaturedServer({
     const bountyData = await fetchBountiesForISR({
       page: 1,
       limit,
-      sort: 'updated',
+      sort: 'created',
       order: 'desc'
     });
 

@@ -17,7 +17,7 @@ interface BountyListProps {
 export function BountyListWithPrefetch({
   initialPage = 1,
   limit = 30,
-  sort = 'updated',
+  sort = 'created',
   order = 'desc',
   language
 }: BountyListProps) {

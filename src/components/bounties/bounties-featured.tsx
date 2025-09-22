@@ -16,7 +16,7 @@ export function BountiesFeatured({ hidePagination = false }: BountiesFeaturedPro
   useEffect(() => {
     const fetchFeaturedBounties = async () => {
       try {
-        const response = await fetch("/api/bounties?mode=list&page=1&limit=6&sort=updated&order=desc");
+        const response = await fetch("/api/bounties?mode=list&page=1&limit=6&sort=created&order=desc");
         
         if (response.ok) {
           const data = await response.json();

@@ -132,8 +132,8 @@ export class BountyDeduplicationService {
       // Sort by created_at (most recent first)
       finalBounties.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-      // Limit to prevent cache bloat (keep latest 2000 bounties)
-      finalBounties = finalBounties.slice(0, 2000);
+      // Limit to prevent cache bloat (keep latest 5000 bounties to accommodate all active bounties)
+      finalBounties = finalBounties.slice(0, 5000);
 
       // Update cache
       await Promise.all([

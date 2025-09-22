@@ -97,8 +97,8 @@ async function updateLatestBountiesCache(
         }
       }
       
-      // Keep only the latest 1000 bounties
-      bounties = bounties.slice(0, 1000);
+      // Keep only the latest 5000 bounties to accommodate all active bounties
+      bounties = bounties.slice(0, 5000);
       
       // Update cache with 1 hour expiration
       await redisCache.setex(cacheKey, 3600, JSON.stringify(bounties));
