@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build && npm run post-build",
+    "build": "next build",
     "post-build": "node scripts/post-build-refresh.js",
     "start": "next start",
     "lint": "next lint",

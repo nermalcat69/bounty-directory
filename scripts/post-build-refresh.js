@@ -12,34 +12,14 @@ async function clearCacheDirectly() {
   console.log('🔄 Clearing cache after build...');
   
   try {
-    // Import Redis cache module dynamically
-    const redisModulePath = path.join(process.cwd(), 'src', 'lib', 'redis-cache.ts');
-    
     // Check if we can access Redis during build
     if (process.env.NODE_ENV === 'production' && !process.env.REDIS_URL) {
       console.log('⚠️  No Redis URL available during build - cache will be cleared on first request');
       return { success: true, message: 'Cache clearing deferred to runtime' };
     }
     
-    // Try to clear Redis cache if available
-    try {
-      // Dynamic import to avoid build-time issues
-      const { redisCache } = await import('../src/lib/redis-cache.js');
-      
-      console.log('🗑️  Clearing Redis cache keys...');
-      await Promise.all([
-        redisCache.del("snapshots:latest"),
-        redisCache.del("snapshots:top100"), 
-        redisCache.del("bounty:total"),
-        redisCache.del("bounties:latest")
-      ]);
-      
-      console.log('✅ Redis cache cleared successfully');
-      
-    } catch (redisError) {
-      console.log('⚠️  Redis not available during build - cache will be cleared on first request');
-      console.log(`   Redis error: ${redisError.message}`);
-    }
+    // Redis cache clearing is handled at runtime via cache invalidation marker
+    console.log('⚠️  Redis not available during build - cache will be cleared on first request');
     
     // Create a cache invalidation marker file
     const markerPath = path.join(process.cwd(), '.cache-invalidated');
