@@ -77,12 +77,7 @@ export function UserMenu() {
                     Add Company
                   </button>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/jobs/new">Post a job</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/freelance/new">Post freelance</Link>
-                </DropdownMenuItem>
+
                 <DropdownMenuItem onClick={handleSignOut}>
                   Sign out
                 </DropdownMenuItem>
@@ -131,12 +126,7 @@ export function UserMenu() {
                   Add Company
                 </button>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/jobs/new">Post a job</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/freelance/new">Post freelance</Link>
-              </DropdownMenuItem>
+
               <DropdownMenuItem asChild>
                 <Link href="/alerts">Alerts</Link>
               </DropdownMenuItem>

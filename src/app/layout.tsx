@@ -18,7 +18,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Bounty Directory",
-  description: "Discover bounties, freelance opportunities, and connect with developers",
+  description: "Discover bounties and connect with developers",
   icons: [
     {
       rel: "icon",
@@ -27,38 +27,14 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: "Bounty Directory",
-    description: "Discover bounties, freelance opportunities, and connect with developers",
+    description: "Discover bounties and connect with developers",
     url: "https://bounty.directory",
     locale: "en_US",
     type: "website",
-    images: [
-      {
-        url: "https://pub-abe1cd4008f5412abb77357f87d7d7bb.r2.dev/opengraph-image-v2.png",
-        width: 800,
-        height: 600,
-      },
-      {
-        url: "https://pub-abe1cd4008f5412abb77357f87d7d7bb.r2.dev/opengraph-image-v2.png",
-        width: 1800,
-        height: 1600,
-      },
-    ],
   },
   twitter: {
     title: "Bounty Directory",
-    description: "Discover bounties, freelance opportunities, and connect with developers",
-    images: [
-      {
-        url: "https://pub-abe1cd4008f5412abb77357f87d7d7bb.r2.dev/opengraph-image-v2.png",
-        width: 800,
-        height: 600,
-      },
-      {
-        url: "https://pub-abe1cd4008f5412abb77357f87d7d7bb.r2.dev/opengraph-image-v2.png",
-        width: 1800,
-        height: 1600,
-      },
-    ],
+    description: "Discover bounties and connect with developers",
   },
 };
 

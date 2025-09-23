@@ -1,8 +1,5 @@
 import { BountyCard } from "./bounty-card";
-import { AdCard } from "./ad-card";
 import { fetchBountiesForISR } from "@/lib/cached-bounty-fetcher";
-import { injectAdsIntoBounties, type BountyOrAd } from "@/lib/ad-utils";
-import { ads } from "@/data/ads";
 
 interface BountyListServerProps {
   selectedLanguage?: string;
@@ -99,28 +96,19 @@ export async function BountyListServer({
       );
     }
 
-    // Inject ads into bounties for better monetization
-    const bountiesWithAds: BountyOrAd[] = injectAdsIntoBounties(bounties, 6, 3);
-
     return (
       <div className="w-full">
         {/* Bounty Grid */}
-        <div className={getGridClasses(selectedLayout, bountiesWithAds.length)}>
-          {bountiesWithAds.map((item, index) => {
-            if (item.type === "ad") {
-              return <AdCard key={item.key} ad={item.data as any} />;
-            } else {
-              return (
-                <div
-                  key={item.key}
-                  className="animate-in fade-in slide-in-from-bottom-4 duration-500 will-change-transform"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  <BountyCard bounty={item.data as any} />
-                </div>
-              );
-            }
-          })}
+        <div className={getGridClasses(selectedLayout, bounties.length)}>
+          {bounties.map((bounty, index) => (
+            <div
+              key={`bounty-${bounty.id}`}
+              className="animate-in fade-in slide-in-from-bottom-4 duration-500 will-change-transform"
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <BountyCard bounty={bounty} />
+            </div>
+          ))}
         </div>
 
         {/* Note about client-side loading for more items */}

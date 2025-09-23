@@ -13,11 +13,6 @@ import {
 } from "drizzle-orm/pg-core";
 
 // Enums
-export const planEnum = pgEnum("plan", ["standard", "featured", "premium"]);
-export const workplaceEnum = pgEnum("workplace", ["On site", "Remote", "Hybrid"]);
-export const projectTypeEnum = pgEnum("project_type", ["Web Development", "Mobile App", "Desktop App", "API Development", "Database Design", "UI/UX Design", "DevOps", "Data Analysis", "Machine Learning", "Other"]);
-export const urgencyEnum = pgEnum("urgency", ["Low", "Medium", "High", "Urgent"]);
-export const budgetRangeEnum = pgEnum("budget_range", ["Under $500", "$500-$1000", "$1000-$2500", "$2500-$5000", "$5000-$10000", "$10000+"]);
 export const subscriptionStatusEnum = pgEnum("subscription_status", ["active", "canceled", "past_due", "incomplete", "trialing"]);
 
 // Users table - Better Auth compatible
@@ -68,44 +63,9 @@ export const posts = pgTable("posts", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Jobs table
-export const jobs = pgTable("jobs", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  title: varchar("title", { length: 255 }).notNull(),
-  companyId: uuid("company_id").references(() => companies.id).notNull(),
-  location: varchar("location", { length: 255 }),
-  description: text("description").notNull(),
-  link: text("link").notNull(),
-  workplace: workplaceEnum("workplace").notNull(),
-  experience: varchar("experience", { length: 255 }),
-  plan: planEnum("plan").default("standard"),
-  active: boolean("active").default(true),
-  order: integer("order").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-});
 
-// Freelance table
-export const freelance = pgTable("freelance", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  title: varchar("title", { length: 255 }).notNull(),
-  companyId: uuid("company_id").references(() => companies.id).notNull(),
-  location: varchar("location", { length: 255 }),
-  description: text("description").notNull(),
-  link: text("link"),
-  workplace: workplaceEnum("workplace").notNull(),
-  experience: varchar("experience", { length: 255 }),
-  projectType: projectTypeEnum("project_type").notNull(),
-  budgetRange: budgetRangeEnum("budget_range").notNull(),
-  duration: varchar("duration", { length: 100 }), // e.g., "2-4 weeks", "1-3 months"
-  skills: text("skills"), // Comma-separated skills
-  urgency: urgencyEnum("urgency").default("Medium"),
-  contactEmail: varchar("contact_email", { length: 255 }),
-  plan: planEnum("plan").default("standard"),
-  active: boolean("active").default(true),
-  order: integer("order").default(0),
-  ownerId: uuid("owner_id").references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+
+
 
 
 
@@ -214,7 +174,6 @@ export const usersRelations = relations(users, ({ many }) => ({
   companies: many(companies),
   votes: many(votes),
   alerts: many(alerts),
-  freelance: many(freelance),
   subscriptions: many(subscriptions),
 }));
 
@@ -223,8 +182,6 @@ export const companiesRelations = relations(companies, ({ one, many }) => ({
     fields: [companies.ownerId],
     references: [users.id],
   }),
-  jobs: many(jobs),
-  freelance: many(freelance),
 }));
 
 export const postsRelations = relations(posts, ({ one, many }) => ({
@@ -235,23 +192,9 @@ export const postsRelations = relations(posts, ({ one, many }) => ({
   votes: many(votes),
 }));
 
-export const jobsRelations = relations(jobs, ({ one }) => ({
-  company: one(companies, {
-    fields: [jobs.companyId],
-    references: [companies.id],
-  }),
-}));
 
-export const freelanceRelations = relations(freelance, ({ one }) => ({
-  company: one(companies, {
-    fields: [freelance.companyId],
-    references: [companies.id],
-  }),
-  owner: one(users, {
-    fields: [freelance.ownerId],
-    references: [users.id],
-  }),
-}));
+
+
 
 
 

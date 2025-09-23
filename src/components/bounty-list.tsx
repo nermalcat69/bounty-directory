@@ -2,13 +2,9 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { BountyCard } from "./bounty-card";
-import { AdCard } from "./ad-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import type { BountyWithAmount } from "@/app/api/bounties/route";
-import { injectAdsIntoBounties, type BountyOrAd } from "@/lib/ad-utils";
-import type { Ad } from "@/data/ads";
-import { ads } from "@/data/ads";
 import { useBountyPrefetch } from "@/utils/prefetch";
 
 interface BountyListProps {
@@ -48,7 +44,6 @@ const getGridClasses = (layout: string, itemCount: number) => {
 
 export function BountyList({ selectedLanguage, onTotalBountiesChange, selectedSort, selectedLayout }: BountyListProps) {
   const [bounties, setBounties] = useState<BountyWithAmount[]>([]);
-  const [displayItems, setDisplayItems] = useState<BountyOrAd[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [offset, setOffset] = useState(0);
@@ -122,47 +117,13 @@ export function BountyList({ selectedLanguage, onTotalBountiesChange, selectedSo
               console.log(`Filtered out ${receivedBounties.length - newItemsCount} duplicate bounties:`, duplicateIds.slice(0, 5));
             }
             
-            // For load more, preserve existing display items and add new ones with potential ads
-            if (newItemsCount > 0) {
-              setDisplayItems(prevItems => {
-                const currentBountyCount = bounties.length; // Count before adding new items
-                const newItemsWithAds: BountyOrAd[] = [];
-                
-                newBounties.forEach((bounty: BountyWithAmount, index: number) => {
-                  // Add the bounty
-                  newItemsWithAds.push({
-                    type: 'bounty' as const,
-                    data: bounty,
-                    key: `bounty-${bounty.id}`
-                  });
-                  
-                  // Check if we should add an ad after this bounty
-                  const globalPosition = currentBountyCount + index;
-                  const shouldInjectAd = (globalPosition + 1) % 6 === 0; // Every 6th item
-                  
-                  if (shouldInjectAd) {
-                    const randomAd = ads[globalPosition % ads.length]; // Simple rotation
-                    newItemsWithAds.push({
-                      type: 'ad' as const,
-                      data: randomAd,
-                      key: `ad-${randomAd.id}-${globalPosition}`
-                    });
-                  }
-                });
-                
-                return [...prevItems, ...newItemsWithAds];
-              });
-            }
+            // No additional processing needed for load more
           } else {
             updatedBounties = data.data.bounties;
             newItemsCount = updatedBounties.length;
             setBounties(updatedBounties);
             
             console.log(`Initial load: ${newItemsCount} items loaded`);
-            
-            // For initial load, inject ads into the full list
-            const itemsWithAds = injectAdsIntoBounties(updatedBounties, 6, 3);
-            setDisplayItems(itemsWithAds);
           }
           
           const totalCount = data.data.total?.count || 0;
@@ -251,7 +212,7 @@ export function BountyList({ selectedLanguage, onTotalBountiesChange, selectedSo
     );
   }
 
-  if (displayItems.length === 0) {
+  if (bounties.length === 0) {
     return (
       <div className="text-center py-12">
         <div className="mb-4">
@@ -298,22 +259,12 @@ export function BountyList({ selectedLanguage, onTotalBountiesChange, selectedSo
 
   return (
     <div className="space-y-6 min-h-[800px]">
-      <div className={`grid ${getGridClasses(selectedLayout, displayItems.length)} transition-all duration-300 ease-in-out gap-4`}>
-        {displayItems.map((item, index) => {
-          if (item.type === 'bounty') {
-            return (
-              <div key={item.key} className="animate-in fade-in slide-in-from-bottom-2 duration-400 will-change-transform" style={{ animationDelay: `${(index % 30) * 30}ms` }}>
-                <BountyCard bounty={item.data as BountyWithAmount} />
-              </div>
-            );
-          } else {
-            return (
-              <div key={item.key} className="animate-in fade-in slide-in-from-bottom-2 duration-400 will-change-transform" style={{ animationDelay: `${(index % 30) * 30}ms` }}>
-                <AdCard ad={item.data as Ad} />
-              </div>
-            );
-          }
-        })}
+      <div className={`grid ${getGridClasses(selectedLayout, bounties.length)} transition-all duration-300 ease-in-out gap-4`}>
+        {bounties.map((bounty, index) => (
+          <div key={bounty.id} className="animate-in fade-in slide-in-from-bottom-2 duration-400 will-change-transform" style={{ animationDelay: `${(index % 30) * 30}ms` }}>
+            <BountyCard bounty={bounty} />
+          </div>
+        ))}
       </div>
 
       {/* Loading more indicator */}

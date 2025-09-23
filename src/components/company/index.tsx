@@ -4,7 +4,6 @@ import { format } from "date-fns";
 import { CompanyContent } from "./company-content";
 import { CompanyHeader } from "./company-header";
 import { CompanyHero } from "./company-hero";
-import { CompanyJobs } from "./company-jobs";
 
 export async function Company({
   slug,
@@ -51,8 +50,6 @@ export async function Company({
         website={data?.website || ""}
         social_x_link={""} // social_x_link field doesn't exist in companies schema
       />
-
-      <CompanyJobs slug={data?.slug} />
 
       <div className="my-14 space-y-10 w-full">
         <div className="text-sm text-[#878787] flex justify-between items-center border-t border-border pt-6">

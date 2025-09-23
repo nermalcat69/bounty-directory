@@ -95,7 +95,7 @@ export function CompanyForm({
   const { execute, isExecuting } = useAction(upsertCompanyAction, {
     onSuccess: () => {
       if (!redirect) {
-        // Refresh for the new company to be visible in job form
+        // Refresh for the new company to be visible
         setReload(true);
       }
     },

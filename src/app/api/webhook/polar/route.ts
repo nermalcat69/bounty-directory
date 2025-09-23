@@ -1,5 +1,4 @@
 import {
-  activateJobListing,
   activateSubscription,
 } from "@/lib/polar";
 import { Webhooks } from "@polar-sh/nextjs";
@@ -10,15 +9,6 @@ export const POST = Webhooks({
     switch (payload.type) {
       // Checkout has been updated - this will be triggered when checkout status goes from confirmed -> succeeded
       case "checkout.updated": {
-        // Handle job listing checkout
-        if (payload.data.metadata.jobListingId) {
-          await activateJobListing(
-            payload.data.metadata.jobListingId as string,
-            payload.data.metadata.plan as string,
-          );
-          break;
-        }
-
         // Handle subscription checkout
         if (payload.data.metadata.userId && payload.data.metadata.plan === "alerts_monthly") {
           await activateSubscription(

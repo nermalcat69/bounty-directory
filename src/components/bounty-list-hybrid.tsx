@@ -2,11 +2,9 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { BountyCard } from "./bounty-card";
-import { AdCard } from "./ad-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import type { BountyWithAmount } from "@/app/api/bounties/route";
-import { injectAdsIntoBounties, type BountyOrAd } from "@/lib/ad-utils";
 import { useBountyPrefetch } from "@/utils/prefetch";
 
 interface BountyListHybridProps {
@@ -184,8 +182,7 @@ export function BountyListHybrid({
     onTotalBountiesChangeRef.current(totalCount);
   }, [totalCount]);
 
-  // Inject ads into bounties
-  const bountiesWithAds: BountyOrAd[] = injectAdsIntoBounties(bounties, 6, Math.max(1, Math.floor(bounties.length / 10)));
+  // Use bounties directly without ads
 
   if (loading && bounties.length === 0) {
     return (
@@ -255,22 +252,16 @@ export function BountyListHybrid({
   return (
     <div className="w-full">
       {/* Bounty Grid */}
-      <div className={getGridClasses(selectedLayout, bountiesWithAds.length)}>
-        {bountiesWithAds.map((item, index) => {
-          if (item.type === "ad") {
-            return <AdCard key={item.key} ad={item.data as any} />;
-          } else {
-            return (
-              <div
-                key={item.key}
-                className="animate-in fade-in slide-in-from-bottom-4 duration-500 will-change-transform"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <BountyCard bounty={item.data as any} />
-              </div>
-            );
-          }
-        })}
+      <div className={getGridClasses(selectedLayout, bounties.length)}>
+        {bounties.map((bounty, index) => (
+           <div
+             key={bounty.id}
+             className="animate-in fade-in slide-in-from-bottom-4 duration-500 will-change-transform"
+             style={{ animationDelay: `${index * 50}ms` }}
+           >
+             <BountyCard bounty={bounty} />
+           </div>
+         ))}
       </div>
 
       {/* Loading more indicator */}

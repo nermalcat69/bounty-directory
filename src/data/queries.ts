@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { users, posts, votes, companies, jobs } from "@/db/schema";
+import { users, posts, votes, companies } from "@/db/schema";
 import { eq, and, desc, count, or, asc, ne, ilike } from "drizzle-orm";
 
 export async function getUserProfile(userId: string) {
@@ -150,137 +150,9 @@ export async function getCompanies() {
   }
 }
 
-export async function getFeaturedJobs({
-  onlyPremium,
-}: {
-  onlyPremium?: boolean;
-} = {}) {
-  try {
-    const planCondition = onlyPremium 
-      ? eq(jobs.plan, "premium")
-      : or(eq(jobs.plan, "featured"), eq(jobs.plan, "premium"));
 
-    const data = await db
-      .select({
-        id: jobs.id,
-         title: jobs.title,
-         description: jobs.description,
-         location: jobs.location,
-         link: jobs.link,
-         workplace: jobs.workplace,
-         experience: jobs.experience,
-         plan: jobs.plan,
-         order: jobs.order,
-         active: jobs.active,
-         createdAt: jobs.createdAt,
-         companyId: jobs.companyId,
-        company: companies,
-      })
-      .from(jobs)
-      .innerJoin(companies, eq(jobs.companyId, companies.id))
-      .where(and(eq(jobs.active, true), planCondition))
-      .orderBy(desc(jobs.order), desc(jobs.createdAt))
-      .limit(100);
 
-    return {
-      // Shuffle the data
-      data: data?.sort(() => Math.random() - 0.5),
-      error: null,
-    };
-  } catch (error) {
-    return { data: null, error };
-  }
-}
 
-export async function getJobs() {
-  try {
-    const data = await db
-      .select({
-          id: jobs.id,
-          title: jobs.title,
-          description: jobs.description,
-          location: jobs.location,
-          link: jobs.link,
-          workplace: jobs.workplace,
-          experience: jobs.experience,
-          plan: jobs.plan,
-          order: jobs.order,
-          active: jobs.active,
-          createdAt: jobs.createdAt,
-          companyId: jobs.companyId,
-          owner_id: companies.ownerId,
-          company: companies,
-        })
-      .from(jobs)
-      .innerJoin(companies, eq(jobs.companyId, companies.id))
-      .where(eq(jobs.active, true))
-      .orderBy(desc(jobs.createdAt))
-      .limit(1000);
-
-    return { data, error: null };
-  } catch (error) {
-    return { data: null, error };
-  }
-}
-
-export async function getJobsByCompany(slug: string) {
-  try {
-    const data = await db
-      .select({
-        id: jobs.id,
-        title: jobs.title,
-        description: jobs.description,
-        location: jobs.location,
-        link: jobs.link,
-        workplace: jobs.workplace,
-        experience: jobs.experience,
-        plan: jobs.plan,
-        order: jobs.order,
-        active: jobs.active,
-        createdAt: jobs.createdAt,
-        companyId: jobs.companyId,
-        owner_id: companies.ownerId,
-        companies: companies,
-      })
-      .from(jobs)
-      .innerJoin(companies, eq(jobs.companyId, companies.id))
-      .where(eq(companies.slug, slug))
-      .orderBy(desc(jobs.createdAt));
-
-    return { data, error: null };
-  } catch (error) {
-    return { data: null, error };
-  }
-}
-
-export async function getJobById(id: string) {
-  try {
-    const data = await db
-      .select({
-        id: jobs.id,
-        title: jobs.title,
-        description: jobs.description,
-        location: jobs.location,
-        link: jobs.link,
-        workplace: jobs.workplace,
-        experience: jobs.experience,
-        plan: jobs.plan,
-        order: jobs.order,
-        active: jobs.active,
-        createdAt: jobs.createdAt,
-        companyId: jobs.companyId,
-        company: companies,
-      })
-      .from(jobs)
-      .innerJoin(companies, eq(jobs.companyId, companies.id))
-      .where(eq(jobs.id, id))
-      .limit(1);
-
-    return { data: data[0] || null, error: null };
-  } catch (error) {
-    return { data: null, error };
-  }
-}
 
 
 

@@ -8,7 +8,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Bounty Directory - Discover Bounties & Opportunities",
   description:
-    "Discover bounties, freelance opportunities, and join a community of developers and creators.",
+    "Discover bounties and join a community of developers and creators.",
 };
 
 // Enable ISR with 5-minute revalidation for better performance

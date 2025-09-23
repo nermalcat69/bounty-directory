@@ -7,8 +7,6 @@ import { CommandDialog, CommandItem, CommandList } from "./ui/command";
 
 const navigationItems = [
   { title: "Bounties", href: "/" },
-  { title: "Freelance", href: "/freelance" },
-  { title: "Jobs", href: "/jobs" },
   { title: "About", href: "/about" },
 ];
 

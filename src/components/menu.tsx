@@ -8,8 +8,6 @@ import Link from "next/link";
 
 const navigationItems = [
   { href: "/", label: "Bounties" },
-  { href: "/freelance", label: "Freelance" },
-  { href: "/jobs", label: "Jobs" },
 ];
 
 export function Menu() {
